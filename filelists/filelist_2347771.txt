@@ -1,0 +1,4 @@
+# Depot 2347771 - CS2 Windows server binaries (slim)
+# Server binaries + game binaries, exclude csgo_community_addons
+regex:^game/bin/win64/
+regex:^game/csgo/bin/
