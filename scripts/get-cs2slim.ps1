@@ -125,7 +125,7 @@ if (-not (Test-Path "$RepoDir\.git") -and -not (Test-Path "$RepoDir\cs2slim.py")
       Write-Host "  Trying: git clone $url"
       $oldEap = $ErrorActionPreference
       $ErrorActionPreference = 'Continue'
-      git clone --depth 1 $url $RepoDir
+      git -c http.lowSpeedLimit=1000 -c http.lowSpeedTime=15 clone --depth 1 $url $RepoDir
       $cloneOk = ($LASTEXITCODE -eq 0)
       $ErrorActionPreference = $oldEap
       if ($cloneOk) { break }
@@ -138,7 +138,7 @@ if (-not (Test-Path "$RepoDir\.git") -and -not (Test-Path "$RepoDir\cs2slim.py")
     foreach ($url in $TarUrls) {
       Write-Host "  Trying: download tarball $url"
       $tar = "$Workdir\repo.tar.gz"
-      curl.exe -L --retry 2 -C - -o $tar (Get-GhUrl $url)
+      curl.exe -L --retry 2 -C - --connect-timeout 15 --max-time 600 -o $tar (Get-GhUrl $url)
       if ($LASTEXITCODE -eq 0) {
         tar -xzf $tar -C $RepoDir --strip-components=1
         if ($LASTEXITCODE -eq 0) { Remove-Item -Force $tar; break }

@@ -123,7 +123,7 @@ if [ ! -d "$REPO_DIR/.git" ] && [ ! -f "$REPO_DIR/cs2slim.py" ]; then
   if command -v git >/dev/null 2>&1; then
     for url in "${GIT_URLS[@]}"; do
       echo "  尝试: git clone $url"
-      if git clone --depth 1 "$url" "$REPO_DIR" >/dev/null 2>&1; then
+      if git -c http.lowSpeedLimit=1000 -c http.lowSpeedTime=15 clone --depth 1 "$url" "$REPO_DIR" >/dev/null 2>&1; then
         break
       fi
       rm -rf "$REPO_DIR"
@@ -134,7 +134,7 @@ if [ ! -d "$REPO_DIR/.git" ] && [ ! -f "$REPO_DIR/cs2slim.py" ]; then
     mkdir -p "$REPO_DIR"
     for url in "${TAR_URLS[@]}"; do
       echo "  尝试: 下载源码包 $url"
-      if curl -fL --retry 2 -C - -o "$WORKDIR/repo.tar.gz" "$url" \
+      if curl -fL --retry 2 -C - --connect-timeout 15 --max-time 600 -o "$WORKDIR/repo.tar.gz" "$url" \
           && tar xzf "$WORKDIR/repo.tar.gz" --strip-components=1 -C "$REPO_DIR" 2>/dev/null; then
         rm -f "$WORKDIR/repo.tar.gz"
         break
