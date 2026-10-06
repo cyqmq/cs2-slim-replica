@@ -12,11 +12,19 @@
     },
     "metamod": {
       "required": false,
-      "name": "Metamod:Source 插件框架",
+      "name": "Metamod:Source 插件框架（Linux）",
       "description": "CS2 基础插件加载框架（linuxsteamrt64）。安装后控制台可用 meta 命令，并可加载 CounterStrikeSharp 等插件。自动补 gameinfo.gi。",
       "filelist": [],
       "config_url": "https://raw.githubusercontent.com/cyqmq/cs2-slim-features/main/metamod/",
       "prebuilt_url": "https://github.com/cyqmq/cs2-slim-features/releases/latest/download/metamod-pack.zip"
+    },
+    "metamod-win": {
+      "required": false,
+      "name": "Metamod:Source 插件框架（Windows）",
+      "description": "CS2 基础插件加载框架 Windows 版（win64）。安装后控制台可用 meta 命令，并可加载 CounterStrikeSharp 等插件。自动补 gameinfo.gi。",
+      "filelist": [],
+      "config_url": "https://raw.githubusercontent.com/cyqmq/cs2-slim-features/main/metamod-win/",
+      "prebuilt_url": "https://github.com/cyqmq/cs2-slim-features/releases/latest/download/metamod-pack-win.zip"
     },
     "gotv": {
       "required": false,

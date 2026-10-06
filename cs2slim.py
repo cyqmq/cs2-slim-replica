@@ -605,7 +605,7 @@ def cmd_prebuilt(args, cfg):
         print(f"  拼装功能 {f} ...")
         extract_archive(fzip, tree)
     # 功能后置补丁（如 Metamod 需要修改 gameinfo.gi）
-    if platform == "linux" and "metamod" in features:
+    if any(f in ("metamod", "metamod-win") for f in features):
         _patch_gameinfo_for_metamod(tree)
 
     # 5. 报告
