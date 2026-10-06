@@ -1,0 +1,5 @@
+﻿__pycache__/
+*.pyc
+slim.yaml
+cs2-build/
+*.log
