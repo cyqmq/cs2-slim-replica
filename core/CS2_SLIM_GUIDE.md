@@ -142,10 +142,28 @@ echo "game/csgo/pak01_$N.vpk" > iter.txt
 ### 7.1 steamclient.so（64 位）
 
 CS2 服务端需要 64 位 `steamclient.so`，放在 `/root/.steam/sdk64/steamclient.so`。
-从 SteamCMD 官方包获取（`linux64/steamclient.so`）：
+
+> ⚠️ 注意：新版 SteamCMD 官方包（`steamcmd_linux.tar.gz`）**已不再包含** `linux64/steamclient.so`（包内只有 linux32 内容）。请改用下面的 Steam SDK 包方法。
+
+从 Steam 客户端更新清单（`bins_sdk_ubuntu12.zip`）获取 `linux64/steamclient.so`：
 ```bash
+mkdir -p /workspace/tools/steamclient64 && cd /workspace/tools/steamclient64
+# 1) 获取 manifest
+curl -fsSL -o manifest.txt https://client-update.akamai.steamstatic.com/steam_client_ubuntu12
+# 2) 解析 bins_sdk_ubuntu12.zip.<sha>
+SDK_FILE=$(grep -A4 '"bins_sdk_ubuntu12"' manifest.txt | grep '"file"' | sed -n 's/.*"file"[[:space:]]*"\([^"]*\)".*/\1/p')
+# 3) 下载并解压
+curl -fsSL -o bins_sdk.zip "https://steamcdn-a.akamaihd.net/client/$SDK_FILE"
+python3 - <<'PY'
+import zipfile, os
+with zipfile.ZipFile("bins_sdk.zip") as z:
+    z.extract("linux64/steamclient.so")
+os.replace("linux64/steamclient.so", "steamclient.so")
+PY
+rm -rf linux64 bins_sdk.zip manifest.txt
+# 4) 链接到服务端 sdk64
 mkdir -p /root/.steam/sdk64
-ln -sf /workspace/tools/steamcmd/linux64/steamclient.so /root/.steam/sdk64/steamclient.so
+ln -sf /workspace/tools/steamclient64/steamclient.so /root/.steam/sdk64/steamclient.so
 ```
 
 ### 7.2 V8 库符号链接（关键坑）
@@ -437,7 +455,7 @@ bots 是引擎内置功能，无需额外 depot 文件，只需 cfg 配置。
 
 ### 15.2 CLI 子命令
 
-`ash
+```bash
 python cs2slim.py init                  # 生成 slim.yaml 模板
 python cs2slim.py download --config slim.yaml   # 组合 filelist + 调用 DepotDownloader
 python cs2slim.py extract  --config slim.yaml   # 提取 loose files
@@ -463,45 +481,60 @@ depot_tool: C:\path\to\DepotDownloader.exe
 
 ### 15.4 纯命令行参数
 
-`ash
+```bash
 python cs2slim.py download --platform linux --maps de_dust2,de_mirage --features bots
 `
 
 ### 15.5 预构建包（可选）
 
 - 地图：从 cs2-slim-maps Release 下载 de_mirage.zip 等，解压到 game/csgo/maps/。
-- 功能：从 cs2-slim-features Release 下载 ots-pack.zip，解压后按说明部署 cfg。
+- 功能：从 cs2-slim-features Release 下载 bots-pack.zip，解压后按说明部署 cfg。
 
 ### 15.6 一键安装（curl | bash / irm | iex）
 
-主仓库提供零依赖一键脚本，自动下载 DepotDownloader 与 steamclient，并执行 cs2slim.py all（download + extract + build）。
+主仓库提供零依赖一键脚本，自动下载工具与 steamclient，并执行 CLI 一键流程。支持两种模式：
+
+- **source（默认）**：下载工具 → 获取配方 → 下载 depot → 提取 → 组装（首次约 1.5GB 下载）
+- **prebuilt**：直接从 GitHub Release 拉取预构建精简包并自动拼装地图/功能组件（核心包约 1.1GB 下载，更快）
 
 **Linux（curl | bash）**
 
-`ash
-# 默认: de_dust2
+```bash
+# 默认: de_dust2（source 模式）
 curl -fsSL https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs2slim.sh | bash
 
-# 选配地图/人机/打包
+# 选配地图/人机/打包（source 模式）
 CS2_MAPS=de_dust2,de_mirage CS2_FEATURES=bots CS2_PACKAGE=1 \
   curl -fsSL https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs2slim.sh | bash
-`
+
+# 预构建模式: 直接拉取 Release 包自动拼装
+CS2_MODE=prebuilt CS2_MAPS=de_dust2,de_mirage CS2_FEATURES=bots \
+  curl -fsSL https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs2slim.sh | bash
+```
 
 **Windows（irm | iex）**
 
-`powershell
+```powershell
+# 默认: de_dust2（source 模式）
 irm https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs2slim.ps1 | iex
 
- = 'de_dust2,de_mirage';  = 'bots';  = '1'
+# 选配地图/人机/打包（source 模式）
+$env:CS2_MAPS = 'de_dust2,de_mirage'; $env:CS2_FEATURES = 'bots'; $env:CS2_PACKAGE = '1'
 irm https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs2slim.ps1 | iex
-`
+
+# 预构建模式: 直接拉取 Release 包自动拼装
+$env:CS2_MODE = 'prebuilt'; $env:CS2_MAPS = 'de_dust2,de_mirage'; $env:CS2_FEATURES = 'bots'
+irm https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs2slim.ps1 | iex
+```
 
 **CLI 一键模式（等价）**
 
-`ash
-python cs2slim.py all --config slim.yaml           # download + extract + build
-python cs2slim.py all --config slim.yaml --package  # 全流程 + 打包
-`
+```bash
+python cs2slim.py all --config slim.yaml           # source: download + extract + build
+python cs2slim.py all --config slim.yaml --package  # source: 全流程 + 打包
+python cs2slim.py prebuilt --config slim.yaml        # prebuilt: 拉取 Release 包自动拼装
+python cs2slim.py prebuilt --config slim.yaml --dry-run  # 只预览要下载的包
+```
 
-一键脚本支持环境变量：CS2_MAPS / CS2_FEATURES / CS2_WORKDIR / CS2_PACKAGE / CS2_DRY_RUN。
+一键脚本支持环境变量：CS2_MODE / CS2_MAPS / CS2_FEATURES / CS2_WORKDIR / CS2_PACKAGE / CS2_DRY_RUN。
 CS2_DRY_RUN=1 时只生成配置并打印将执行的命令，不实际下载（可用于预览）。

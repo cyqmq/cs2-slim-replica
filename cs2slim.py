@@ -34,7 +34,9 @@ import os
 import shutil
 import subprocess
 import sys
+import tarfile
 import urllib.request
+import zipfile
 
 CLI_DIR = os.path.dirname(os.path.abspath(__file__))
 CORE_DIR = os.path.join(CLI_DIR, "core")
@@ -156,6 +158,76 @@ def build_combined_filelist(core_filelist, cfg, registry_base=None):
                 added.add(path)
         print(f"  + 功能 {feat}")
     return lines
+
+
+# ---------------------------------------------------------------------------
+# 下载/解压工具
+# ---------------------------------------------------------------------------
+def download_file(url, dest, desc=""):
+    """下载文件到 dest，带进度显示。失败时清理并退出。"""
+    print(f"下载 {desc or os.path.basename(dest)} ...")
+    tmp = dest + ".part"
+    try:
+        with urllib.request.urlopen(url, timeout=60) as r, open(tmp, "wb") as f:
+            total = int(r.headers.get("Content-Length") or 0)
+            done = 0
+            while True:
+                chunk = r.read(1024 * 1024)
+                if not chunk:
+                    break
+                f.write(chunk)
+                done += len(chunk)
+                if total:
+                    pct = done * 100 // max(total, 1)
+                    print(f"\r  {pct}% ({done/1024/1024:.0f}/{total/1024/1024:.0f} MB)", end="", flush=True)
+        print()
+        os.replace(tmp, dest)
+    except Exception as e:
+        if os.path.exists(tmp):
+            os.remove(tmp)
+        sys.exit(f"下载失败 {url}: {e}")
+
+
+def extract_archive(path, dest):
+    """解压 zip / tar.gz 到 dest。"""
+    os.makedirs(dest, exist_ok=True)
+    if path.endswith(".zip"):
+        with zipfile.ZipFile(path) as z:
+            z.extractall(dest)
+    else:
+        with tarfile.open(path, "r:gz") as t:
+            t.extractall(dest)
+
+
+CORE_PREBUILT = {
+    "linux": {
+        "name": "cs2-slim.tar.gz",
+        "url": "https://github.com/cyqmq/cs2-slim-replica/releases/latest/download/cs2-slim.tar.gz",
+        "tree": "slim",
+    },
+    "win64": {
+        "name": "cs2-slim-win.zip",
+        "url": "https://github.com/cyqmq/cs2-slim-replica/releases/latest/download/cs2-slim-win.zip",
+        "tree": "slim-win",
+    },
+}
+
+
+def _update_start_scripts(platform, tree):
+    """用主仓库最新的启动脚本覆盖精简树内的启动脚本（含网络优化参数）。"""
+    try:
+        if platform == "linux":
+            url = "https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/core/deploy/linux/start_server.sh"
+            dst = os.path.join(tree, "start_server.sh")
+        else:
+            url = "https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/core/deploy/windows/start_server.bat"
+            dst = os.path.join(tree, "start_server.bat")
+        tmp = dst + ".new"
+        urllib.request.urlretrieve(url, tmp)
+        os.replace(tmp, dst)
+        print("  已更新启动脚本（含 VPN/TUN 网络优化参数）")
+    except Exception as e:
+        print(f"  WARN: 更新启动脚本失败: {e}")
 
 
 # ---------------------------------------------------------------------------
@@ -331,6 +403,90 @@ def cmd_all(args, cfg):
 
 
 # ---------------------------------------------------------------------------
+# 预构建模式: 直接拉取 GitHub Release 包并自动拼装
+# ---------------------------------------------------------------------------
+def cmd_prebuilt(args, cfg):
+    platform = cfg.get("platform") or "win64"
+    if platform not in CORE_PREBUILT:
+        sys.exit(f"不支持的平台: {platform} (可选 linux/win64)")
+    workdir = os.path.abspath(cfg.get("workdir") or "./cs2-build")
+    os.makedirs(workdir, exist_ok=True)
+
+    core = CORE_PREBUILT[platform]
+    tree = os.path.join(workdir, core["tree"])
+
+    if args.dry_run:
+        print("[dry-run] 预构建模式计划:")
+        print(f"  核心包: {core['url']}")
+        print(f"  解压到: {tree}")
+        reg_maps = load_registry("maps.json", cfg.get("registry_base"))
+        for m in resolve_maps(cfg):
+            if m == "de_dust2":
+                continue
+            url = (reg_maps.get("maps", {}).get(m) or {}).get("prebuilt_url") or ""
+            print(f"  地图 {m}: {url or '（无预构建包，跳过）'}")
+        reg_feat = load_registry("features.json", cfg.get("registry_base"))
+        for f in parse_csv(cfg.get("features") or []):
+            url = (reg_feat.get("features", {}).get(f) or {}).get("prebuilt_url") or ""
+            print(f"  功能 {f}: {url or '（无预构建包，跳过）'}")
+        return
+
+    # 1. 核心包
+    core_path = os.path.join(workdir, core["name"])
+    if not os.path.exists(core_path):
+        download_file(core["url"], core_path, f"核心精简包 {core['name']}")
+
+    # 2. 解压核心包
+    if os.path.exists(tree):
+        shutil.rmtree(tree)
+    os.makedirs(tree, exist_ok=True)
+    print(f"解压核心包到 {tree} ...")
+    extract_archive(core_path, tree)
+    _update_start_scripts(platform, tree)
+
+    # 3. 地图组件
+    maps = resolve_maps(cfg)
+    reg_maps = load_registry("maps.json", cfg.get("registry_base"))
+    for m in maps:
+        if m == "de_dust2":
+            continue
+        meta = reg_maps.get("maps", {}).get(m)
+        url = (meta or {}).get("prebuilt_url") or ""
+        if not url:
+            print(f"  WARN: 地图 {m} 暂无预构建包（可用 source 模式: cs2slim.py all），跳过")
+            continue
+        mzip = os.path.join(workdir, f"{m}.zip")
+        if not os.path.exists(mzip):
+            download_file(url, mzip, f"地图 {m}")
+        print(f"  拼装地图 {m} ...")
+        extract_archive(mzip, tree)
+
+    # 4. 功能组件
+    features = parse_csv(cfg.get("features") or [])
+    reg_feat = load_registry("features.json", cfg.get("registry_base"))
+    for f in features:
+        meta = reg_feat.get("features", {}).get(f)
+        url = (meta or {}).get("prebuilt_url") or ""
+        if not url:
+            print(f"  WARN: 功能 {f} 暂无预构建包，跳过")
+            continue
+        fzip = os.path.join(workdir, f"{f}-pack.zip")
+        if not os.path.exists(fzip):
+            download_file(url, fzip, f"功能 {f}")
+        print(f"  拼装功能 {f} ...")
+        extract_archive(fzip, tree)
+
+    # 5. 报告
+    print()
+    print("预构建模式完成!")
+    if platform == "linux":
+        print(f"  启动: bash {tree}/start_server.sh")
+    else:
+        print(f"  启动: {tree}/start_server.bat")
+    print(f"  提示: 地图/功能包已缓存到 {workdir}，重复执行可复用。")
+
+
+# ---------------------------------------------------------------------------
 # 主入口
 # ---------------------------------------------------------------------------
 def main():
@@ -382,6 +538,11 @@ def main():
     p_all.add_argument("--format", choices=["zip", "tar.gz"], default="tar.gz")
     add_common(p_all)
     p_all.set_defaults(func=cmd_all)
+
+    p_pb = sub.add_parser("prebuilt", help="预构建模式: 直接拉取 Release 包自动拼装")
+    p_pb.add_argument("--dry-run", action="store_true", help="只打印下载计划, 不下载")
+    add_common(p_pb)
+    p_pb.set_defaults(func=cmd_prebuilt)
 
     args = ap.parse_args()
 

@@ -6,6 +6,7 @@
 #   curl -fsSL https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs2slim.sh | bash
 #
 # 环境变量（可选）:
+#   CS2_MODE       source(默认, 从 depot 构建) | prebuilt(直接拉取 Release 包拼装)
 #   CS2_MAPS      逗号分隔地图列表, 默认 de_dust2
 #   CS2_FEATURES  逗号分隔功能列表, 默认空
 #   CS2_WORKDIR   工作目录, 默认 $HOME/cs2-slim-build
@@ -24,12 +25,16 @@ FEATURES="${CS2_FEATURES:-}"
 WORKDIR="${CS2_WORKDIR:-$HOME/cs2-slim-build}"
 PACKAGE="${CS2_PACKAGE:-0}"
 DRY_RUN="${CS2_DRY_RUN:-0}"
+MODE="${CS2_MODE:-source}"
 REPO_URL="https://github.com/cyqmq/cs2-slim-replica.git"
 DD_URL="https://github.com/SteamRE/DepotDownloader/releases/download/DepotDownloader_3.4.0/DepotDownloader-linux-x64.zip"
-STEAMCMD_URL="https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz"
+STEAM_MANIFEST_URL="https://client-update.akamai.steamstatic.com/steam_client_ubuntu12"
 
 echo "== cs2slim 一键安装 (Linux) =="
-echo "地图: $MAPS / 功能: ${FEATURES:-无} / 工作目录: $WORKDIR"
+echo "模式: $MODE / 地图: $MAPS / 功能: ${FEATURES:-无} / 工作目录: $WORKDIR"
+if [ "$MODE" = "prebuilt" ]; then
+  echo "(预构建模式: 直接从 GitHub Release 拉取并拼装，无需 depot 下载)"
+fi
 
 # --- 依赖检查 ---
 PY=""
@@ -42,7 +47,9 @@ mkdir -p "$WORKDIR/tools"
 
 # --- 1. DepotDownloader ---
 DD_DIR="$WORKDIR/tools/depotdownloader"
-if [ "$DRY_RUN" = "1" ]; then
+if [ "$MODE" = "prebuilt" ]; then
+  echo "[1/5] (prebuilt) 跳过 DepotDownloader 下载"
+elif [ "$DRY_RUN" = "1" ]; then
   echo "[1/5] (dry-run) 跳过 DepotDownloader 下载"
 else
   if [ ! -f "$DD_DIR/DepotDownloader" ]; then
@@ -62,18 +69,32 @@ PY
 fi
 DD_EXE="$DD_DIR/DepotDownloader"
 
-# --- 2. steamclient.so (SteamCMD) ---
+# --- 2. steamclient.so (Steam SDK 包) ---
 SC_DIR="$WORKDIR/tools/steamclient64"
-if [ "$DRY_RUN" = "1" ]; then
+if [ "$MODE" = "prebuilt" ]; then
+  echo "[2/5] (prebuilt) 跳过 steamclient.so 下载"
+elif [ "$DRY_RUN" = "1" ]; then
   echo "[2/5] (dry-run) 跳过 steamclient.so 下载"
 else
   if [ ! -f "$SC_DIR/steamclient.so" ]; then
-    echo "[2/5] 下载 SteamCMD 获取 steamclient.so ..."
+    echo "[2/5] 下载 Steam SDK 获取 steamclient.so ..."
     mkdir -p "$SC_DIR"
-    curl -fsSL -o "$SC_DIR/steamcmd.tar.gz" "$STEAMCMD_URL"
-    (cd "$SC_DIR" && tar xzf steamcmd.tar.gz linux64/steamclient.so \
-        && mv linux64/steamclient.so ./steamclient.so \
-        && rm -rf linux64 steamcmd.tar.gz)
+    curl -fsSL -o "$SC_DIR/steam_client_ubuntu12" "$STEAM_MANIFEST_URL"
+    SDK_FILE=$(grep -A4 '"bins_sdk_ubuntu12"' "$SC_DIR/steam_client_ubuntu12" | grep '"file"' | sed -n 's/.*"file"[[:space:]]*"\([^"]*\)".*/\1/p')
+    if [ -z "$SDK_FILE" ]; then
+      echo "错误: 无法在 Steam manifest 中找到 bins_sdk_ubuntu12" >&2
+      exit 1
+    fi
+    curl -fsSL -o "$SC_DIR/bins_sdk.zip" "https://steamcdn-a.akamaihd.net/client/$SDK_FILE"
+    $PY - "$SC_DIR" <<'PY'
+import sys, zipfile, os
+d = sys.argv[1]
+with zipfile.ZipFile(os.path.join(d, "bins_sdk.zip")) as z:
+    z.extract("linux64/steamclient.so", d)
+os.replace(os.path.join(d, "linux64", "steamclient.so"), os.path.join(d, "steamclient.so"))
+os.remove(os.path.join(d, "bins_sdk.zip"))
+PY
+    rm -rf "$SC_DIR/linux64" "$SC_DIR/steam_client_ubuntu12"
   fi
 fi
 
@@ -101,18 +122,27 @@ CFG="$WORKDIR/slim.yaml"
 } > "$CFG"
 echo "[4/5] 配置已生成: $CFG"
 
-# --- 5. 一键执行 download + extract + build (+package) ---
+# --- 5. 一键执行 (source: 构建 / prebuilt: 拉取拼装) ---
 PACKAGE_FLAG=""
 if [ "$PACKAGE" = "1" ]; then
   PACKAGE_FLAG="--package"
 fi
 if [ "$DRY_RUN" = "1" ]; then
   echo "[5/5] (dry-run) 跳过一键执行"
-  echo "将执行: $PY $REPO_DIR/cs2slim.py all --config $CFG $PACKAGE_FLAG"
+  if [ "$MODE" = "prebuilt" ]; then
+    echo "将执行: $PY $REPO_DIR/cs2slim.py prebuilt --config $CFG"
+  else
+    echo "将执行: $PY $REPO_DIR/cs2slim.py all --config $CFG $PACKAGE_FLAG"
+  fi
   exit 0
 fi
-echo "[5/5] 开始下载/提取/组装 (首次约 1.5GB 下载, 请耐心等待) ..."
-$PY "$REPO_DIR/cs2slim.py" all --config "$CFG" $PACKAGE_FLAG
+if [ "$MODE" = "prebuilt" ]; then
+  echo "[5/5] 拉取预构建包并自动拼装 (核心包约 1.1GB 下载) ..."
+  $PY "$REPO_DIR/cs2slim.py" prebuilt --config "$CFG"
+else
+  echo "[5/5] 开始下载/提取/组装 (首次约 1.5GB 下载, 请耐心等待) ..."
+  $PY "$REPO_DIR/cs2slim.py" all --config "$CFG" $PACKAGE_FLAG
+fi
 
 echo
 echo "=============================================="

@@ -9,6 +9,7 @@
 #   $env:CS2_WORKDIR   working directory, default $HOME\cs2-slim-build
 #   $env:CS2_PACKAGE  '1' = package zip after build
 #   $env:CS2_DRY_RUN  '1' = only write config, no download (preview)
+#   $env:CS2_MODE     'source' (default, build from depot) | 'prebuilt' (pull Release packages)
 #
 # Example:
 #   $env:CS2_MAPS = 'de_dust2,de_mirage'; $env:CS2_FEATURES = 'bots'
@@ -21,13 +22,14 @@ $Features = if ($env:CS2_FEATURES) { $env:CS2_FEATURES } else { '' }
 $Workdir = if ($env:CS2_WORKDIR) { $env:CS2_WORKDIR } else { Join-Path $HOME 'cs2-slim-build' }
 $Package = if ($env:CS2_PACKAGE -eq '1') { $true } else { $false }
 $DryRun = if ($env:CS2_DRY_RUN -eq '1') { $true } else { $false }
+$Mode = if ($env:CS2_MODE) { $env:CS2_MODE } else { 'source' }
 $RepoUrl = 'https://github.com/cyqmq/cs2-slim-replica.git'
 $DDUrl = 'https://github.com/SteamRE/DepotDownloader/releases/download/DepotDownloader_3.4.0/DepotDownloader-win-x64.zip'
 $SteamManifestUrl = 'https://client-update.akamai.steamstatic.com/steam_client_win32'
 
 $FeaturesDisplay = if ($Features) { $Features } else { 'none' }
 Write-Host "== cs2slim one-click installer (Windows) =="
-Write-Host "Maps: $Maps / Features: $FeaturesDisplay / Workdir: $Workdir"
+Write-Host "Mode: $Mode / Maps: $Maps / Features: $FeaturesDisplay / Workdir: $Workdir"
 
 # --- Python detection ---
 $PyExe = $null
@@ -47,7 +49,9 @@ New-Item -ItemType Directory -Force -Path "$Workdir\tools" | Out-Null
 # --- 1. DepotDownloader ---
 $DDDir = "$Workdir\tools\depotdownloader"
 $DDExe = "$DDDir\DepotDownloader.exe"
-if ($DryRun) {
+if ($Mode -eq 'prebuilt') {
+  Write-Host '[1/5] (prebuilt) skip DepotDownloader download'
+} elseif ($DryRun) {
   Write-Host '[1/5] (dry-run) skip DepotDownloader download'
 } else {
   if (-not (Test-Path $DDExe)) {
@@ -62,7 +66,9 @@ if ($DryRun) {
 
 # --- 2. steamclient DLLs (Steam client update package) ---
 $SCDir = "$Workdir\tools\steamclient64_win"
-if ($DryRun) {
+if ($Mode -eq 'prebuilt') {
+  Write-Host '[2/5] (prebuilt) skip steamclient DLL download'
+} elseif ($DryRun) {
   Write-Host '[2/5] (dry-run) skip steamclient DLL download'
 } else {
   if (-not (Test-Path "$SCDir\steamclient64.dll")) {
@@ -109,16 +115,25 @@ depot_tool: $DDExe
 "@ | Set-Content -Path $Cfg -Encoding UTF8
 Write-Host "[4/5] Config written: $Cfg"
 
-# --- 5. One-click execution: download + extract + build (+package) ---
-$CliArgs = @("$RepoDir\cs2slim.py", 'all', '--config', $Cfg)
-if ($Package) { $CliArgs += '--package' }
+# --- 5. One-click execution (source: build / prebuilt: pull+assemble) ---
+$CliArgs = @()
+if ($Mode -eq 'prebuilt') {
+  $CliArgs = @("$RepoDir\cs2slim.py", 'prebuilt', '--config', $Cfg)
+} else {
+  $CliArgs = @("$RepoDir\cs2slim.py", 'all', '--config', $Cfg)
+  if ($Package) { $CliArgs += '--package' }
+}
 if ($DryRun) {
   Write-Host '[5/5] (dry-run) skip one-click execution'
   Write-Host "Would run: $PyExe $($CliArgs -join ' ')"
 } else {
-  Write-Host '[5/5] Downloading/extracting/building (first run ~1.7GB download, please wait) ...'
+  if ($Mode -eq 'prebuilt') {
+    Write-Host '[5/5] Pulling prebuilt packages and assembling (core package ~1.2GB download) ...'
+  } else {
+    Write-Host '[5/5] Downloading/extracting/building (first run ~1.7GB download, please wait) ...'
+  }
   & $PyExe @CliArgs
-  if ($LASTEXITCODE -ne 0) { throw "cs2slim all failed (exit $LASTEXITCODE)" }
+  if ($LASTEXITCODE -ne 0) { throw "cs2slim failed (exit $LASTEXITCODE)" }
 }
 
 if ($DryRun) {

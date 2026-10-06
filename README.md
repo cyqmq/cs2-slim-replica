@@ -37,27 +37,38 @@
 
 ## 一键安装（零依赖，自动下载工具）
 
-无需预先安装 DepotDownloader / SteamCMD，一条命令完成「下载工具 → 获取配方 → 下载 depot → 提取 → 组装」。
+无需预先安装 DepotDownloader / SteamCMD，一条命令即可完成。支持两种模式：
+
+- **source（默认）**：下载工具 → 获取配方 → 下载 depot → 提取 → 组装（首次约 1.5GB 下载）
+- **prebuilt**：直接从 GitHub Release 拉取**预构建精简包**并自动拼装地图/功能组件（核心包约 1.1GB 下载，省去构建耗时）
 
 ### Linux (curl | bash)
 
 ```bash
-# 默认: de_dust2 精简服务端
+# 默认: de_dust2 精简服务端（source 模式）
 curl -fsSL https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs2slim.sh | bash
 
-# 选配: 地图 + 人机 + 打包
+# 选配: 地图 + 人机 + 打包（source 模式）
 CS2_MAPS=de_dust2,de_mirage CS2_FEATURES=bots CS2_PACKAGE=1 \
+  curl -fsSL https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs2slim.sh | bash
+
+# 预构建模式: 直接拉取 Release 包自动拼装（更快）
+CS2_MODE=prebuilt CS2_MAPS=de_dust2,de_mirage CS2_FEATURES=bots \
   curl -fsSL https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs2slim.sh | bash
 ```
 
 ### Windows (irm | iex)
 
 ```powershell
-# 默认: de_dust2 精简服务端
+# 默认: de_dust2 精简服务端（source 模式）
 irm https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs2slim.ps1 | iex
 
-# 选配: 地图 + 人机 + 打包
+# 选配: 地图 + 人机 + 打包（source 模式）
 $env:CS2_MAPS = 'de_dust2,de_mirage'; $env:CS2_FEATURES = 'bots'; $env:CS2_PACKAGE = '1'
+irm https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs2slim.ps1 | iex
+
+# 预构建模式: 直接拉取 Release 包自动拼装
+$env:CS2_MODE = 'prebuilt'; $env:CS2_MAPS = 'de_dust2,de_mirage'; $env:CS2_FEATURES = 'bots'
 irm https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs2slim.ps1 | iex
 ```
 
@@ -65,17 +76,20 @@ irm https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs
 
 | 变量 | 说明 | 默认 |
 |------|------|------|
+| `CS2_MODE` | `source`（从 depot 构建）或 `prebuilt`（拉取 Release 包拼装） | source |
 | `CS2_MAPS` | 逗号分隔地图 | de_dust2 |
 | `CS2_FEATURES` | 逗号分隔功能 | (空) |
 | `CS2_WORKDIR` | 工作目录 | `~/cs2-slim-build` |
-| `CS2_PACKAGE` | 1=完成后打包 | 0 |
+| `CS2_PACKAGE` | 1=完成后打包（仅 source 模式） | 0 |
 | `CS2_DRY_RUN` | 1=只生成配置不下载（预览） | 0 |
 
 ### CLI 一键模式（等价）
 
 ```bash
-python cs2slim.py all --config slim.yaml           # download + extract + build
-python cs2slim.py all --config slim.yaml --package  # 全流程 + 打包
+python cs2slim.py all --config slim.yaml           # source: download + extract + build
+python cs2slim.py all --config slim.yaml --package  # source: 全流程 + 打包
+python cs2slim.py prebuilt --config slim.yaml        # prebuilt: 拉取 Release 包自动拼装
+python cs2slim.py prebuilt --config slim.yaml --dry-run  # 只预览要下载的包
 ```
 
 ## 快速开始（CLI 方式，推荐）
