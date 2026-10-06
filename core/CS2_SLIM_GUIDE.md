@@ -191,10 +191,12 @@ done
 ```bash
 ./game/bin/linuxsteamrt64/cs2 \
   -dedicated +map de_dust2 +hostname "SlimTest" \
-  -maxplayers 12 -ip 0.0.0.0 -port 27015 \
+  -maxplayers 12 -ip 0.0.0.0 -port "${SERVER_PORT:-27015}" \
   -insecure -condebug +game_type 0 +game_mode 0 \
   +sv_pure 0 +sv_cheats 1
 ```
+
+> 端口说明：普通环境默认 **27015**；简幻欢等面板会注入环境变量 `SERVER_PORT`（随机端口），脚本会自动使用它，无需手动改。
 
 - `-insecure`：禁用 VAC（服务端必须）
 - `sv_pure 0`：关闭客户端文件一致性校验（因为服务端已精简文件）
@@ -212,10 +214,10 @@ done
 ```
 [Server] SV:  12 player server started
 [Server] CSource2Server::GameServerSteamAPIActivated()
-UDP 27015 监听
+UDP ${SERVER_PORT:-27015} 监听
 ```
 
-客户端：Steam 启动项加 `-insecure` → 控制台 `connect 服务器IP:27015`
+客户端：Steam 启动项加 `-insecure` → 控制台 `connect 服务器IP:${SERVER_PORT:-27015}`
 
 ---
 
@@ -393,10 +395,12 @@ curl -L -o bins_win32.zip \
 @echo off
 cd /d "%~dp0"
 game\bin\win64\cs2.exe -dedicated +map de_dust2 +hostname "SlimTest" \
-  -maxplayers 12 -ip 0.0.0.0 -port 27015 \
+  -maxplayers 12 -ip 0.0.0.0 -port %SERVER_PORT% \
   -insecure -condebug +game_type 0 +game_mode 0 \
   +sv_pure 0 +sv_cheats 1
 ```
+
+> 端口说明：`start_server.bat` 会自动读取 `SERVER_PORT`（面板环境变量），未设置时回退 27015。
 
 验证标准（与第八节相同）：
 

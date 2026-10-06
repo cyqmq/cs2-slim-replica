@@ -489,7 +489,7 @@ def cmd_run(args, cfg):
         exe, "-dedicated", "+map", args.map,
         "+hostname", srv.get("hostname") or "SlimTest",
         "-maxplayers", str(srv.get("maxplayers") or 12),
-        "-ip", "0.0.0.0", "-port", str(srv.get("port") or 27015),
+        "-ip", "0.0.0.0", "-port", str(os.environ.get("SERVER_PORT") or srv.get("port") or 27015),
         "-insecure", "-condebug", "+game_type", "0", "+game_mode", "0",
         "+sv_pure", str(srv.get("sv_pure") or 0),
         "+sv_cheats", str(srv.get("sv_cheats") or 1),
