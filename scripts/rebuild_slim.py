@@ -15,23 +15,28 @@ CS2 精简服务端 组装脚本（Linux + Windows）
   slim-win/ Windows 精简树（game/bin/win64 + 同上 + V8 DLL 复制 + steamclient 三件套）
 """
 
+import argparse
 import os
 import shutil
 
-BASE = r"C:\Users\Administrator\cs2-replica"
-DEPOT = os.path.join(BASE, "depot")
-LOOSE = os.path.join(BASE, "loose")
-TOOLS = os.path.join(BASE, "tools")
 
-SHARED = os.path.join(DEPOT, "2347770")   # 共享内容
-LINUX_BIN = os.path.join(DEPOT, "2347773")  # Linux 服务端二进制
-WIN_BIN = os.path.join(DEPOT, "2347771")     # Windows 服务端二进制
+def configure_paths(base):
+    """根据工作目录设置所有路径。"""
+    global BASE, DEPOT, LOOSE, TOOLS, SHARED, LINUX_BIN, WIN_BIN, SLIM, SLIM_WIN, STEAMCLIENT_SO, STEAMCLIENT_WIN_DIR
+    BASE = os.path.abspath(base)
+    DEPOT = os.path.join(BASE, "depot")
+    LOOSE = os.path.join(BASE, "loose")
+    TOOLS = os.path.join(BASE, "tools")
 
-SLIM = os.path.join(BASE, "slim")
-SLIM_WIN = os.path.join(BASE, "slim-win")
+    SHARED = os.path.join(DEPOT, "2347770")   # 共享内容
+    LINUX_BIN = os.path.join(DEPOT, "2347773")  # Linux 服务端二进制
+    WIN_BIN = os.path.join(DEPOT, "2347771")     # Windows 服务端二进制
 
-STEAMCLIENT_SO = os.path.join(TOOLS, "steamclient64", "steamclient.so")
-STEAMCLIENT_WIN_DIR = os.path.join(TOOLS, "steamclient64_win")
+    SLIM = os.path.join(BASE, "slim")
+    SLIM_WIN = os.path.join(BASE, "slim-win")
+
+    STEAMCLIENT_SO = os.path.join(TOOLS, "steamclient64", "steamclient.so")
+    STEAMCLIENT_WIN_DIR = os.path.join(TOOLS, "steamclient64_win")
 
 
 def copy_tree(src, dst):
@@ -52,8 +57,11 @@ def clear_tree(path):
     print(f"  cleared: {os.path.relpath(path, BASE)}")
 
 
-def copy_shared_content(dst):
-    """复制与平台无关的共享内容（csgo loose + core loose + cfg + maps + 根散文件）。"""
+def copy_shared_content(dst, extra_maps=None):
+    """复制与平台无关的共享内容（csgo loose + core loose + cfg + maps + 根散文件）。
+
+    extra_maps: 额外地图名列表（如 ["de_mirage"]），其 VPK 从共享 depot 复制。
+    """
     copy_tree(os.path.join(LOOSE, "game", "csgo"), os.path.join(dst, "game", "csgo"))
     copy_tree(os.path.join(LOOSE, "game", "core"), os.path.join(dst, "game", "core"))
     copy_tree(os.path.join(SHARED, "game", "csgo", "cfg"), os.path.join(dst, "game", "csgo", "cfg"))
@@ -61,20 +69,26 @@ def copy_shared_content(dst):
               os.path.join(dst, "game", "csgo", "maps", "de_dust2.vpk"))
     copy_tree(os.path.join(SHARED, "game", "csgo", "maps", "prefabs"),
               os.path.join(dst, "game", "csgo", "maps", "prefabs"))
+    for m in (extra_maps or []):
+        src = os.path.join(SHARED, "game", "csgo", "maps", f"{m}.vpk")
+        if os.path.exists(src):
+            copy_file(src, os.path.join(dst, "game", "csgo", "maps", f"{m}.vpk"))
+        else:
+            print(f"  WARN: 地图 VPK 不存在 {src}")
     for f in ["gameinfo.gi", "gameinfo_branchspecific.gi", "steam.inf"]:
         copy_file(os.path.join(SHARED, "game", "csgo", f), os.path.join(dst, "game", "csgo", f))
     for f in ["gameinfo.gi", "gameinfo_branchspecific.gi"]:
         copy_file(os.path.join(SHARED, "game", "core", f), os.path.join(dst, "game", "core", f))
 
 
-def assemble_linux():
+def assemble_linux(extra_maps=None):
     print("=== Linux 精简树 ===")
     clear_tree(SLIM)
     copy_tree(os.path.join(LINUX_BIN, "game", "bin", "linuxsteamrt64"),
               os.path.join(SLIM, "game", "bin", "linuxsteamrt64"))
     copy_tree(os.path.join(LINUX_BIN, "game", "csgo", "bin", "linuxsteamrt64"),
               os.path.join(SLIM, "game", "csgo", "bin", "linuxsteamrt64"))
-    copy_shared_content(SLIM)
+    copy_shared_content(SLIM, extra_maps)
     copy_file(STEAMCLIENT_SO, os.path.join(SLIM, "steamclient.so"))
     _write_linux_scripts()
 
@@ -167,14 +181,14 @@ setup.sh 会:
         print(f"  wrote: {os.path.relpath(path, BASE)}")
 
 
-def assemble_windows():
+def assemble_windows(extra_maps=None):
     print("=== Windows 精简树 ===")
     clear_tree(SLIM_WIN)
     copy_tree(os.path.join(WIN_BIN, "game", "bin", "win64"),
               os.path.join(SLIM_WIN, "game", "bin", "win64"))
     copy_tree(os.path.join(WIN_BIN, "game", "csgo", "bin", "win64"),
               os.path.join(SLIM_WIN, "game", "csgo", "bin", "win64"))
-    copy_shared_content(SLIM_WIN)
+    copy_shared_content(SLIM_WIN, extra_maps)
 
     # V8 DLL 复制到 game/csgo/bin/win64 (Windows 用复制代替符号链接)
     v8_dlls = ["v8.dll", "v8system.dll", "v8_icui18n.dll", "v8_icuuc.dll",
@@ -262,8 +276,18 @@ def report(tree, name):
 
 
 def main():
-    assemble_linux()
-    assemble_windows()
+    ap = argparse.ArgumentParser(description="CS2 精简服务端组装（Linux + Windows）")
+    ap.add_argument("--base-dir", default=r"C:\Users\Administrator\cs2-replica",
+                    help="工作目录（含 depot/ 和 loose/），默认 cs2-replica")
+    ap.add_argument("--maps", default="",
+                    help="额外地图名，逗号分隔，如 de_mirage,de_inferno（de_dust2 始终包含）")
+    args = ap.parse_args()
+
+    configure_paths(args.base_dir)
+    extra_maps = [m.strip() for m in args.maps.split(",") if m.strip()]
+
+    assemble_linux(extra_maps)
+    assemble_windows(extra_maps)
     print()
     report(SLIM, "slim   (Linux)")
     report(SLIM_WIN, "slim-win (Windows)")

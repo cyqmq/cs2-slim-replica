@@ -1,0 +1,22 @@
+{
+  "version": "2026-10-06",
+  "note": "功能组件。通常不需要额外 depot 文件（bots 是引擎内置 + 配置脚本）。",
+  "features": {
+    "bots": {
+      "required": false,
+      "name": "人机 (Bots)",
+      "description": "服务端 bot_add 人机玩法 + 客户端离线练习配置模板",
+      "filelist": [],
+      "config_url": "https://raw.githubusercontent.com/cyqmq/cs2-slim-features/main/bots/config/",
+      "prebuilt_url": "https://github.com/cyqmq/cs2-slim-features/releases/latest/download/bots-pack.zip"
+    },
+    "gotv": {
+      "required": false,
+      "name": "GOTV 观战",
+      "description": "SourceTV/GOTV 观战配置模板（预留）",
+      "filelist": [],
+      "config_url": "",
+      "prebuilt_url": ""
+    }
+  }
+}

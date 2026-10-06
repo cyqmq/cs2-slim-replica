@@ -1,0 +1,86 @@
+{
+  "version": "2026-10-06",
+  "note": "地图组件。核心 filelist 已包含全部 prefabs，组件只需提供地图 VPK 本身。每个地图组件也可以发布预构建包 (Release zip)。",
+  "maps": {
+    "de_dust2": {
+      "required": true,
+      "name": "Dust II",
+      "filelist": [
+        "game/csgo/maps/de_dust2.vpk"
+      ],
+      "prebuilt_url": ""
+    },
+    "de_mirage": {
+      "required": false,
+      "name": "Mirage",
+      "filelist": [
+        "game/csgo/maps/de_mirage.vpk"
+      ],
+      "prebuilt_url": "https://github.com/cyqmq/cs2-slim-maps/releases/latest/download/de_mirage.zip"
+    },
+    "de_inferno": {
+      "required": false,
+      "name": "Inferno",
+      "filelist": [
+        "game/csgo/maps/de_inferno.vpk"
+      ],
+      "prebuilt_url": "https://github.com/cyqmq/cs2-slim-maps/releases/latest/download/de_inferno.zip"
+    },
+    "de_ancient": {
+      "required": false,
+      "name": "Ancient",
+      "filelist": [
+        "game/csgo/maps/de_ancient.vpk"
+      ],
+      "prebuilt_url": ""
+    },
+    "de_anubis": {
+      "required": false,
+      "name": "Anubis",
+      "filelist": [
+        "game/csgo/maps/de_anubis.vpk"
+      ],
+      "prebuilt_url": ""
+    },
+    "de_cache": {
+      "required": false,
+      "name": "Cache",
+      "filelist": [
+        "game/csgo/maps/de_cache.vpk"
+      ],
+      "prebuilt_url": ""
+    },
+    "de_nuke": {
+      "required": false,
+      "name": "Nuke",
+      "filelist": [
+        "game/csgo/maps/de_nuke.vpk"
+      ],
+      "prebuilt_url": ""
+    },
+    "de_overpass": {
+      "required": false,
+      "name": "Overpass",
+      "filelist": [
+        "game/csgo/maps/de_overpass.vpk"
+      ],
+      "prebuilt_url": ""
+    },
+    "de_train": {
+      "required": false,
+      "name": "Train",
+      "filelist": [
+        "game/csgo/maps/de_train.vpk"
+      ],
+      "prebuilt_url": ""
+    },
+    "de_vertigo": {
+      "required": false,
+      "name": "Vertigo",
+      "filelist": [
+        "game/csgo/maps/de_vertigo.vpk"
+      ],
+      "prebuilt_url": ""
+    }
+  }
+}

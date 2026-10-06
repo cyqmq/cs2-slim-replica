@@ -1,0 +1,30 @@
+# CS2 Slim 主仓库配置模板
+# 用法: python cs2slim.py build --config slim.yaml
+#
+# 字段说明:
+#   platform   : linux | win64
+#   maps       : 地图列表, de_dust2 为必含基础地图, 其余为选配
+#   features   : 功能组件列表 (bots / gotv)
+#   workdir    : 下载/构建工作目录 (缺省为当前目录下的 cs2-build)
+#   depot_tool : DepotDownloader 可执行文件路径 (Windows 下需要)
+#   registry_base : 组件注册表来源, 本地(缺省)或远程 raw URL
+
+platform: win64
+maps:
+  - de_dust2
+  # - de_mirage
+  # - de_inferno
+features:
+  # - bots
+workdir: ./cs2-build
+# depot_tool: C:\path\to\DepotDownloader.exe
+# registry_base: https://raw.githubusercontent.com/cyqmq/cs2-slim-maps/main
+
+# 服务端启动参数 (可选, 用于 run 子命令)
+server:
+  hostname: SlimTest
+  maxplayers: 12
+  port: 27015
+  insecure: true
+  sv_pure: 0
+  sv_cheats: 1
