@@ -10,6 +10,14 @@
       "config_url": "https://raw.githubusercontent.com/cyqmq/cs2-slim-features/main/bots/config/",
       "prebuilt_url": "https://github.com/cyqmq/cs2-slim-features/releases/latest/download/bots-pack.zip"
     },
+    "metamod": {
+      "required": false,
+      "name": "Metamod:Source 插件框架",
+      "description": "CS2 基础插件加载框架（linuxsteamrt64）。安装后控制台可用 meta 命令，并可加载 CounterStrikeSharp 等插件。自动补 gameinfo.gi。",
+      "filelist": [],
+      "config_url": "https://raw.githubusercontent.com/cyqmq/cs2-slim-features/main/metamod/",
+      "prebuilt_url": "https://github.com/cyqmq/cs2-slim-features/releases/latest/download/metamod-pack.zip"
+    },
     "gotv": {
       "required": false,
       "name": "GOTV 观战",

@@ -316,6 +316,38 @@ def _update_start_scripts(platform, tree):
         print(f"  WARN: 更新启动脚本失败: {e}")
 
 
+def _patch_gameinfo_for_metamod(tree):
+    """在 game/csgo/gameinfo.gi 的 SearchPaths 中加入 Game csgo/addons/metamod。
+
+    Metamod:Source 通过该搜索路径让引擎优先加载
+    addons/metamod/bin/linuxsteamrt64/libserver.so 作为 GameDLL，从而注入插件框架。
+    """
+    gi = os.path.join(tree, "game", "csgo", "gameinfo.gi")
+    if not os.path.exists(gi):
+        print(f"  WARN: 未找到 {gi}，无法自动打 Metamod 补丁")
+        return
+    with open(gi, encoding="utf-8", errors="replace") as f:
+        lines = f.readlines()
+    if any("csgo/addons/metamod" in ln for ln in lines):
+        print("  Metamod: gameinfo.gi 已包含 csgo/addons/metamod，跳过补丁")
+        return
+    new_lines = []
+    inserted = False
+    for ln in lines:
+        new_lines.append(ln)
+        stripped = ln.lstrip()
+        if stripped.startswith("Game_LowViolence"):
+            indent = ln[: len(ln) - len(stripped)]
+            new_lines.append(f'{indent}Game\tcsgo/addons/metamod\n')
+            inserted = True
+    if not inserted:
+        print("  WARN: gameinfo.gi 中未找到 Game_LowViolence 行，请手动添加 Game csgo/addons/metamod")
+        return
+    with open(gi, "w", encoding="utf-8", newline="") as f:
+        f.writelines(new_lines)
+    print("  Metamod: 已在 gameinfo.gi 中添加 Game csgo/addons/metamod")
+
+
 # ---------------------------------------------------------------------------
 # 子命令实现
 # ---------------------------------------------------------------------------
@@ -572,6 +604,9 @@ def cmd_prebuilt(args, cfg):
             download_file(url, fzip, f"功能 {f}")
         print(f"  拼装功能 {f} ...")
         extract_archive(fzip, tree)
+    # 功能后置补丁（如 Metamod 需要修改 gameinfo.gi）
+    if platform == "linux" and "metamod" in features:
+        _patch_gameinfo_for_metamod(tree)
 
     # 5. 报告
     print()
