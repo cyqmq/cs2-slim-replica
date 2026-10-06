@@ -560,7 +560,7 @@ CS2_DRY_RUN=1 时只生成配置并打印将执行的命令，不实际下载（
 
 ### 15.7 面板用户（简幻欢 / Pterodactyl 等）
 
-面板（如简幻欢、Pterodactyl）通常要求启动命令指向服务器根目录（`/home/container`）下的 `start.sh`，而精简树在 `/home/container/cs2-slim-build/slim`。解决方案：
+面板（如简幻欢、Pterodactyl）通常要求启动命令指向服务器根目录（`/home/container`）下的 `start.sh`，且**默认只给 `start.sh` 执行权限**。解决方案：
 
 **方案 A：一键脚本面板模式（推荐）**
 
@@ -569,16 +569,22 @@ export CS2_MODE=prebuilt CS2_MAPS=de_dust2 CS2_PANEL=1
 curl -fsSL https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs2slim.sh | bash
 ```
 
-完成后会自动在 `$HOME/start.sh` 生成面板启动脚本：
+完成后会自动在 `$HOME/start.sh` 生成**内置一键安装+启动逻辑**的面板启动脚本：
 
 - 若 `start.sh` 不存在 → 从模板 `core/deploy/linux/start_panel.sh` 生成
 - 若已存在 → 覆盖为最新模板
+- 自动清理 BOM / CRLF，并补上 `cs2` 二进制执行权限
 
 然后在面板里把启动命令设为：
 
 ```bash
 bash start.sh
 ```
+
+**启动流程（全自动）**：
+
+1. **首次启动**：`start.sh` 检测到精简树未安装 → 自动执行 prebuilt 一键安装（下载核心包+地图+功能，约 1.1GB）→ 重新执行自身 → 启动服务端
+2. **后续启动**：直接修复 `cs2` 执行权限 → 链接 `steamclient.so` → 创建 V8 符号链接 → 启动服务端
 
 **方案 B：手动放置模板**
 
@@ -592,6 +598,8 @@ chmod +x ~/start.sh
 该模板每次启动前会自动：
 
 1. 定位精简树（默认 `$HOME/cs2-slim-build/slim`，可用 `CS2_SLIM_DIR` 覆盖）
-2. 搜索并链接 `steamclient.so` 到 `$HOME/.steam/sdk64/steamclient.so`（优先精简树根目录 → `game/bin/linuxsteamrt64` → 全盘搜索 `linux64`）
-3. 创建 V8 库符号链接
-4. 以 `-insecure +sv_pure 0` 启动服务端（精简服必须关闭文件一致性校验）
+2. 若未安装 → 自动执行一键安装（可用 `CS2_MAPS` / `CS2_FEATURES` 定制）
+3. 修复 `cs2` 执行权限（面板默认只给 `start.sh` 权限，由它给其他文件授权）
+4. 搜索并链接 `steamclient.so` 到 `$HOME/.steam/sdk64/steamclient.so`（优先精简树根目录 → `game/bin/linuxsteamrt64` → 全盘搜索 `linux64`）
+5. 创建 V8 库符号链接
+6. 以 `-insecure +sv_pure 0` 启动服务端（精简服必须关闭文件一致性校验）

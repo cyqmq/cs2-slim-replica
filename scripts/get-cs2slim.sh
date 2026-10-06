@@ -198,8 +198,23 @@ if [ "$PANEL" = "1" ]; then
     echo "  检测到已有 $HOME/start.sh，覆盖为最新模板"
   fi
   cp "$PANEL_TEMPLATE" "$HOME/start.sh"
+  # 清理 BOM / CRLF（部分面板环境会引入），并设置执行权限
+  $PY - "$HOME/start.sh" <<'PY'
+import sys
+p = sys.argv[1]
+with open(p, "rb") as f:
+    data = f.read()
+if data.startswith(b"\xef\xbb\xbf"):
+    data = data[3:]
+data = data.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+with open(p, "wb") as f:
+    f.write(data)
+PY
   chmod +x "$HOME/start.sh"
-  echo "  已生成 $HOME/start.sh"
+  # 面板默认只给 start.sh 执行权限，这里顺便补上 cs2 二进制的执行权限
+  chmod +x "$WORKDIR/slim/game/bin/linuxsteamrt64/cs2" 2>/dev/null || true
+  chmod +x "$WORKDIR/slim/start_server.sh" 2>/dev/null || true
+  echo "  已生成 $HOME/start.sh（含自动安装+启动逻辑）"
   echo "  请把面板启动命令设为:  bash start.sh"
 fi
 

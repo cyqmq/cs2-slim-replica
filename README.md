@@ -22,7 +22,7 @@ curl -fsSL https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts
 export CS2_GH_PROXY=https://ghproxy.com CS2_MODE=prebuilt
 curl -fsSL https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs2slim.sh | bash
 
-# 面板模式（简幻欢 / Pterodactyl）: 自动生成 $HOME/start.sh
+# 面板模式（简幻欢 / Pterodactyl）: 自动生成 $HOME/start.sh（首次启动会自动安装）
 export CS2_MODE=prebuilt CS2_PANEL=1
 curl -fsSL https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs2slim.sh | bash
 ```
@@ -57,7 +57,7 @@ irm https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs
 # 普通模式
 bash ~/cs2-slim-build/slim/start_server.sh
 
-# 面板模式（面板启动命令填: bash start.sh）
+# 面板模式（面板启动命令填: bash start.sh；首次启动会自动安装）
 bash ~/start.sh
 ```
 

@@ -532,6 +532,14 @@ def cmd_prebuilt(args, cfg):
     if platform == "linux":
         ensure_steamclient(tree, workdir)
     _update_start_scripts(platform, tree)
+    # 修复执行权限（面板场景默认只给 start.sh 权限）
+    if platform == "linux":
+        cs2_bin = os.path.join(tree, "game", "bin", "linuxsteamrt64", "cs2")
+        if os.path.exists(cs2_bin):
+            os.chmod(cs2_bin, 0o755)
+        start_sh = os.path.join(tree, "start_server.sh")
+        if os.path.exists(start_sh):
+            os.chmod(start_sh, 0o755)
 
     # 3. 地图组件
     maps = resolve_maps(cfg)

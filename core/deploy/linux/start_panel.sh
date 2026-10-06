@@ -1,30 +1,50 @@
 #!/bin/bash
 # CS2 精简服务端 面板启动脚本（简幻欢 / Pterodactyl 等面板通用）
 #
-# 用法:
-#   1) 把本文件放到面板服务器根目录（如 /home/container/start.sh）
-#   2) 面板启动命令设为:  bash start.sh
+# 面板启动命令: bash start.sh
 #
-# 说明:
-#   - 精简树默认在 $HOME/cs2-slim-build/slim，可用环境变量 CS2_SLIM_DIR 覆盖
-#   - 启动前自动:
-#       a) 把 steamclient.so 链接到 $HOME/.steam/sdk64/steamclient.so
-#          （优先当前精简树，其次 game/bin/linuxsteamrt64，最后全盘搜索 linux64）
-#       b) 创建 V8 库符号链接 (game/csgo/bin/linuxsteamrt64 -> game/bin/linuxsteamrt64)
-#   - 启动参数含 -insecure + sv_pure 0（精简服务端必须）
+# 本脚本内置一键安装：
+#   - 首次启动：若精简树未安装，自动执行 prebuilt 一键安装
+#   - 已安装：自动链接 steamclient.so + V8 符号链接后启动服务端
+#
+# 可用环境变量：
+#   CS2_MAPS      选配地图，逗号分隔（默认 de_dust2）
+#   CS2_FEATURES  选配功能，逗号分隔（默认空）
+#   CS2_SLIM_DIR  精简树路径（默认 $HOME/cs2-slim-build/slim）
 
 SLIM_DIR="${CS2_SLIM_DIR:-$HOME/cs2-slim-build/slim}"
+CS2_BIN="$SLIM_DIR/game/bin/linuxsteamrt64/cs2"
 
-cd "$SLIM_DIR" || { echo "无法进入 $SLIM_DIR，请先运行一键脚本或检查 CS2_SLIM_DIR" >&2; exit 1; }
+# ---------- 1. 未安装时自动一键安装 ----------
+if [ ! -x "$CS2_BIN" ]; then
+  echo "[cs2slim] 未检测到精简服务端，开始自动安装（prebuilt 模式）..."
+  echo "[cs2slim] 地图: ${CS2_MAPS:-de_dust2} / 功能: ${CS2_FEATURES:-无}"
+  export CS2_MODE=prebuilt
+  export CS2_MAPS="${CS2_MAPS:-de_dust2}"
+  export CS2_FEATURES="${CS2_FEATURES:-}"
+  export CS2_PANEL=1
+  curl -fsSL --retry 3 \
+    https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs2slim.sh | bash
+  # 安装成功会重新生成 start.sh（同款模板），重新执行以干净状态继续
+  if [ -x "$CS2_BIN" ]; then
+    exec bash "$HOME/start.sh"
+  fi
+  echo "[cs2slim] 错误: 自动安装失败，请检查网络/磁盘后再次启动" >&2
+  exit 1
+fi
 
-# Steam 家目录：优先 $HOME（root=/root, 容器=/home/container, 任意用户=/home/用户名），
-# $HOME 为空时从 passwd 数据库取当前用户家目录
+cd "$SLIM_DIR" || { echo "[cs2slim] 错误: 无法进入 $SLIM_DIR" >&2; exit 1; }
+
+# ---------- 2. 权限修复（面板默认只给 start.sh 执行权限） ----------
+chmod +x game/bin/linuxsteamrt64/cs2 2>/dev/null || true
+chmod +x start_server.sh 2>/dev/null || true
+
+# ---------- 3. steamclient.so 就位 ----------
 STEAM_HOME="${HOME:-}"
 if [ -z "$STEAM_HOME" ]; then
   STEAM_HOME="$(getent passwd "$(id -u)" | cut -d: -f6 2>/dev/null || echo /root)"
 fi
 
-# 1) steamclient.so 就位
 STEAMCLIENT=""
 for cand in \
     "$SLIM_DIR/steamclient.so" \
@@ -42,7 +62,7 @@ else
   echo "[setup] WARN: 找不到 steamclient.so，请先运行一键脚本或 setup.sh" >&2
 fi
 
-# 2) V8 库符号链接
+# ---------- 4. V8 库符号链接 ----------
 if [ -d game/csgo/bin/linuxsteamrt64 ]; then
   cd game/csgo/bin/linuxsteamrt64
   for f in libv8.so libv8system.so libv8_icui18n.so libv8_icuuc.so \
@@ -54,7 +74,7 @@ if [ -d game/csgo/bin/linuxsteamrt64 ]; then
   cd "$SLIM_DIR" || exit 1
 fi
 
-# 3) 启动服务端
+# ---------- 5. 启动服务端 ----------
 exec ./game/bin/linuxsteamrt64/cs2 \
   -dedicated +map de_dust2 +hostname "SlimTest" \
   -maxplayers 12 -ip 0.0.0.0 -port 27015 \

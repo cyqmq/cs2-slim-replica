@@ -5,6 +5,9 @@
 #   2) V8 库符号链接 (game/csgo/bin/linuxsteamrt64 -> game/bin/linuxsteamrt64)
 cd "$(dirname "$0")"
 
+# 0) 修复执行权限（面板/部署环境可能未保留 +x）
+chmod +x game/bin/linuxsteamrt64/cs2 2>/dev/null || true
+
 # 计算 Steam 家目录：优先 $HOME（root=/root, 容器=/home/container, 任意用户=/home/用户名）
 STEAM_HOME="${HOME:-}"
 if [ -z "$STEAM_HOME" ]; then
