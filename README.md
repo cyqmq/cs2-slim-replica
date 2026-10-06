@@ -34,9 +34,14 @@
 
 ## 实测记录
 
-- 2026-10-06 Linux：精简树 1.69GB / 20,343 文件，包 `cs2-slim.tar.gz` 1.11GB，本地校验（CRC + ELF 依赖）全通过。
-- 2026-10-06 Windows（Windows Server 2022 真实运行）：精简树 1.92GB / 20,408 文件，包 `cs2-slim-win.zip` 1.24GB；
-  实测日志达到指南"最终验证"全部标准：
+- 2026-10-06 初版：Linux 精简树 1.69GB / 20,343 文件；Windows 精简树 1.92GB / 20,408 文件，Windows Server 2022 真实启动通过。
+- 2026-10-06 随 CS2 更新重建（v1.1.0）：
+  - 新 manifest：2347770 = 7820179980365915207 / 2347773 = 8082014506965878039 / 2347771 = 459013114122940128（均 10/05/2026）
+  - 提取：csgo 19,187 文件 / 514.4MB，core 878 文件 / 36.6MB
+  - Linux 精简树 1.67GB / 20,210 文件；Windows 精简树 1.90GB / 20,261 文件
+  - Windows 实测启动成功，`GC Connection established for server version 2000927`
+  - filelist 无需改动，DepotDownloader 增量更新自动处理编号包增删（如 pak01_505 被移除）
+  - 实测日志达到指南"最终验证"全部标准：
   ```
   [Server] SV:  12 player server started
   [Server] CSource2Server::GameServerSteamAPIActivated()
