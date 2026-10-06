@@ -1,4 +1,4 @@
-﻿# cs2slim one-click installer (Windows)
+# cs2slim one-click installer (Windows)
 #
 # Usage:
 #   irm https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs2slim.ps1 | iex
