@@ -18,7 +18,7 @@ features:
   # - bots
 workdir: ./cs2-build
 # depot_tool: C:\path\to\DepotDownloader.exe
-# registry_base: https://raw.githubusercontent.com/cyqmq/cs2-slim-maps/main
+# registry_base: https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/registry
 
 # 服务端启动参数 (可选, 用于 run 子命令)
 server:
