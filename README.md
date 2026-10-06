@@ -6,6 +6,8 @@
 
 ## 一键安装
 
+> 💡 不想手写命令？**在线生成一键安装指令**：<https://cyqmq.github.io/cs2-slim-scripts/>（选择地图/功能/模式，自动生成 Linux / Windows 命令）
+
 ### Linux (curl | bash)
 
 > ⚠️ **重要**：管道右侧的 `bash` 收不到 `VAR=值 curl ... | bash` 里的变量（变量只传给 `curl`）。请**先用 `export`**。

@@ -501,6 +501,8 @@ python cs2slim.py download --platform linux --maps de_dust2,de_mirage --features
 
 ### 15.6 一键安装（curl | bash / irm | iex）
 
+> 💡 不想手写命令？用 **在线指令生成器**（GitHub Pages）：<https://cyqmq.github.io/cs2-slim-scripts/>，可视化选择地图/功能/模式后自动生成并复制命令。
+
 主仓库提供零依赖一键脚本，自动下载工具与 steamclient，并执行 CLI 一键流程。支持两种模式：
 
 - **source（默认）**：下载工具 → 获取配方 → 下载 depot → 提取 → 组装（首次约 1.5GB 下载）
