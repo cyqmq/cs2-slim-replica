@@ -13,6 +13,7 @@
 #   CS2_PACKAGE   1=完成后打包 tar.gz, 默认 0
 #   CS2_DRY_RUN   1=只生成配置不下载(预览), 默认 0
 #   CS2_GH_PROXY  GitHub 加速代理前缀(如 https://ghproxy.com), 用于仓库/Release 下载
+#   CS2_PANEL     1=面板模式(简幻欢/Pterodactyl等): 完成后在 $HOME 生成 start.sh, 默认 0
 #
 # 重要: 使用 curl | bash 时，请先用 export 设置变量！
 #   错误: CS2_MODE=prebuilt ... curl ... | bash   (变量只传给 curl，bash 收不到)
@@ -31,6 +32,7 @@ WORKDIR="${CS2_WORKDIR:-$HOME/cs2-slim-build}"
 PACKAGE="${CS2_PACKAGE:-0}"
 DRY_RUN="${CS2_DRY_RUN:-0}"
 MODE="${CS2_MODE:-source}"
+PANEL="${CS2_PANEL:-0}"
 DD_URL="https://github.com/SteamRE/DepotDownloader/releases/download/DepotDownloader_3.4.0/DepotDownloader-linux-x64.zip"
 STEAM_MANIFEST_URL="https://client-update.akamai.steamstatic.com/steam_client_ubuntu12"
 
@@ -182,10 +184,33 @@ else
   $PY "$REPO_DIR/cs2slim.py" all --config "$CFG" $PACKAGE_FLAG
 fi
 
+# --- 6. 面板模式: 生成/覆盖 $HOME/start.sh (简幻欢/Pterodactyl 等面板需要) ---
+if [ "$PANEL" = "1" ]; then
+  echo "[6] 面板模式: 部署启动脚本 ..."
+  PANEL_TEMPLATE="$REPO_DIR/core/deploy/linux/start_panel.sh"
+  if [ ! -f "$PANEL_TEMPLATE" ]; then
+    echo "  本地仓库缺少 start_panel.sh，从 GitHub 获取 ..."
+    curl -fL --retry 3 -o "$WORKDIR/start_panel.sh" \
+      "https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/core/deploy/linux/start_panel.sh"
+    PANEL_TEMPLATE="$WORKDIR/start_panel.sh"
+  fi
+  if [ -f "$HOME/start.sh" ]; then
+    echo "  检测到已有 $HOME/start.sh，覆盖为最新模板"
+  fi
+  cp "$PANEL_TEMPLATE" "$HOME/start.sh"
+  chmod +x "$HOME/start.sh"
+  echo "  已生成 $HOME/start.sh"
+  echo "  请把面板启动命令设为:  bash start.sh"
+fi
+
 echo
 echo "=============================================="
 echo "✅ 完成! 启动服务端:"
-echo "  bash $WORKDIR/slim/start_server.sh"
+if [ "$PANEL" = "1" ]; then
+  echo "  bash $HOME/start.sh   (面板启动脚本)"
+else
+  echo "  bash $WORKDIR/slim/start_server.sh"
+fi
 if [ "$PACKAGE" = "1" ]; then
   echo "  安装包: $WORKDIR/cs2-slim-linux.tar.gz"
 fi

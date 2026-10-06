@@ -555,5 +555,43 @@ python cs2slim.py prebuilt --config slim.yaml        # prebuilt: 拉取 Release 
 python cs2slim.py prebuilt --config slim.yaml --dry-run  # 只预览要下载的包
 ```
 
-一键脚本支持环境变量：CS2_MODE / CS2_MAPS / CS2_FEATURES / CS2_WORKDIR / CS2_PACKAGE / CS2_DRY_RUN / CS2_GH_PROXY。
+一键脚本支持环境变量：CS2_MODE / CS2_MAPS / CS2_FEATURES / CS2_WORKDIR / CS2_PACKAGE / CS2_DRY_RUN / CS2_GH_PROXY / CS2_PANEL。
 CS2_DRY_RUN=1 时只生成配置并打印将执行的命令，不实际下载（可用于预览）。
+
+### 15.7 面板用户（简幻欢 / Pterodactyl 等）
+
+面板（如简幻欢、Pterodactyl）通常要求启动命令指向服务器根目录（`/home/container`）下的 `start.sh`，而精简树在 `/home/container/cs2-slim-build/slim`。解决方案：
+
+**方案 A：一键脚本面板模式（推荐）**
+
+```bash
+export CS2_MODE=prebuilt CS2_MAPS=de_dust2 CS2_PANEL=1
+curl -fsSL https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs2slim.sh | bash
+```
+
+完成后会自动在 `$HOME/start.sh` 生成面板启动脚本：
+
+- 若 `start.sh` 不存在 → 从模板 `core/deploy/linux/start_panel.sh` 生成
+- 若已存在 → 覆盖为最新模板
+
+然后在面板里把启动命令设为：
+
+```bash
+bash start.sh
+```
+
+**方案 B：手动放置模板**
+
+把仓库里的 `core/deploy/linux/start_panel.sh` 复制到面板根目录为 `start.sh`：
+
+```bash
+cp cs2-slim-build/repo/core/deploy/linux/start_panel.sh ~/start.sh
+chmod +x ~/start.sh
+```
+
+该模板每次启动前会自动：
+
+1. 定位精简树（默认 `$HOME/cs2-slim-build/slim`，可用 `CS2_SLIM_DIR` 覆盖）
+2. 搜索并链接 `steamclient.so` 到 `$HOME/.steam/sdk64/steamclient.so`（优先精简树根目录 → `game/bin/linuxsteamrt64` → 全盘搜索 `linux64`）
+3. 创建 V8 库符号链接
+4. 以 `-insecure +sv_pure 0` 启动服务端（精简服必须关闭文件一致性校验）

@@ -61,6 +61,10 @@ curl -fsSL https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts
 # 国内网络受限时，可加 GitHub 加速代理
 export CS2_GH_PROXY=https://ghproxy.com CS2_MODE=prebuilt CS2_MAPS=de_dust2,de_mirage
 curl -fsSL https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs2slim.sh | bash
+
+# 面板模式（简幻欢/Pterodactyl 等）: 完成后自动生成/覆盖 $HOME/start.sh
+export CS2_MODE=prebuilt CS2_MAPS=de_dust2 CS2_PANEL=1
+curl -fsSL https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs2slim.sh | bash
 ```
 
 ### Windows (irm | iex)
@@ -93,6 +97,7 @@ irm https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs
 | `CS2_PACKAGE` | 1=完成后打包（仅 source 模式） | 0 |
 | `CS2_DRY_RUN` | 1=只生成配置不下载（预览） | 0 |
 | `CS2_GH_PROXY` | GitHub 加速代理前缀（如 `https://ghproxy.com`），自动用于仓库/Release 下载 | (空) |
+| `CS2_PANEL` | 1=面板模式：完成后在 `$HOME` 生成/覆盖 `start.sh`（启动命令设为 `bash start.sh`） | 0 |
 
 ### CLI 一键模式（等价）
 
