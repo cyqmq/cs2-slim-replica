@@ -5,11 +5,17 @@
 #   2) V8 库符号链接 (game/csgo/bin/linuxsteamrt64 -> game/bin/linuxsteamrt64)
 cd "$(dirname "$0")"
 
+# 计算 Steam 家目录：优先 $HOME（root=/root, 容器=/home/container, 任意用户=/home/用户名）
+STEAM_HOME="${HOME:-}"
+if [ -z "$STEAM_HOME" ]; then
+  STEAM_HOME="$(getent passwd "$(id -u)" | cut -d: -f6 2>/dev/null || echo /root)"
+fi
+
 # 1) steamclient.so 就位
 if [ -f steamclient.so ]; then
-  mkdir -p "$HOME/.steam/sdk64"
-  ln -sf "$(readlink -f steamclient.so)" "$HOME/.steam/sdk64/steamclient.so"
-  echo "[setup] steamclient.so -> $HOME/.steam/sdk64/steamclient.so"
+  mkdir -p "$STEAM_HOME/.steam/sdk64"
+  ln -sf "$(readlink -f steamclient.so)" "$STEAM_HOME/.steam/sdk64/steamclient.so"
+  echo "[setup] steamclient.so -> $STEAM_HOME/.steam/sdk64/steamclient.so"
 else
   echo "[setup] WARN: 当前目录没有 steamclient.so，服务端可能无法初始化 Steamworks" >&2
 fi
