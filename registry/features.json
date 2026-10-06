@@ -1,6 +1,6 @@
 {
   "version": "2026-10-06",
-  "note": "功能组件。通常不需要额外 depot 文件（bots 是引擎内置 + 配置脚本）；css-win 依赖 metamod-win（requires 字段），拼装时会自动先装依赖。",
+  "note": "功能组件。通常不需要额外 depot 文件（bots 是引擎内置 + 配置脚本）；css 依赖 metamod，css-win 依赖 metamod-win（requires 字段），拼装时会自动先装依赖。",
   "features": {
     "bots": {
       "required": false,
@@ -25,6 +25,15 @@
       "filelist": [],
       "config_url": "https://raw.githubusercontent.com/cyqmq/cs2-slim-features/main/metamod-win/",
       "prebuilt_url": "https://github.com/cyqmq/cs2-slim-features/releases/latest/download/metamod-pack-win.zip"
+    },
+    "css": {
+      "required": false,
+      "name": "CounterStrikeSharp 插件框架（Linux）",
+      "description": "CS2 C# 插件框架 Linux 版（linuxsteamrt64，带 .NET 运行时）。依赖 metamod，安装后把插件 dll 放入 addons/counterstrikesharp/plugins/ 即可。",
+      "filelist": [],
+      "config_url": "https://raw.githubusercontent.com/cyqmq/cs2-slim-features/main/css/",
+      "requires": ["metamod"],
+      "prebuilt_url": "https://github.com/cyqmq/cs2-slim-features/releases/latest/download/css-pack.zip"
     },
     "css-win": {
       "required": false,
