@@ -605,3 +605,23 @@ chmod +x ~/start.sh
 4. 搜索并链接 `steamclient.so` 到 `$HOME/.steam/sdk64/steamclient.so`（优先精简树根目录 → `game/bin/linuxsteamrt64` → 全盘搜索 `linux64`）
 5. 创建 V8 库符号链接
 6. 以 `-insecure +sv_pure 0` 启动服务端（精简服必须关闭文件一致性校验）
+
+### 15.8 插件框架适配（Metamod:Source）
+
+精简服支持加载 **Metamod:Source**（CS2 基础插件框架，CounterStrikeSharp 等插件都依赖它）。已作为功能组件发布：
+
+```bash
+export CS2_MODE=prebuilt CS2_FEATURES=metamod
+curl -fsSL https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs2slim.sh | bash
+```
+
+拼装时自动完成：
+
+1. 解压 `metamod-pack.zip`（Metamod:Source 2.0.0-git1473，linuxsteamrt64）到 `game/csgo/addons/` 结构
+2. 自动在 `game/csgo/gameinfo.gi` 的 SearchPaths 中加入 `Game csgo/addons/metamod`（幂等，重复执行不会重复添加）
+
+**原理**：该搜索路径让引擎优先加载 `addons/metamod/bin/linuxsteamrt64/libserver.so` 作为 GameDLL，从而注入插件框架。
+
+**验证**：启动后控制台输入 `meta version` / `meta list`；若显示 `Unknown command`，检查 `gameinfo.gi` 是否被 CS2 更新重置（重新拼装一次即可）。
+
+**后续**：安装 Metamod 后，可在 `game/csgo/addons/metamod/metaplugins.ini` 里加载其他插件（如 CounterStrikeSharp），或在 `slim.yaml` 的 `features` 中继续追加。
