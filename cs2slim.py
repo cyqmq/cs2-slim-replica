@@ -31,6 +31,7 @@ cs2slim - CS2 精简服务端 配置驱动 CLI（主仓库入口）
 import argparse
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -233,6 +234,54 @@ def extract_archive(path, dest):
     else:
         with tarfile.open(path, "r:gz") as t:
             t.extractall(dest)
+
+
+STEAM_MANIFEST_URL = "https://client-update.akamai.steamstatic.com/steam_client_ubuntu12"
+
+
+def _is_valid_elf64(path, min_size=0):
+    """检查文件是否为有效的 64 位 ELF（用于验证 steamclient.so）。"""
+    try:
+        if os.path.getsize(path) < min_size:
+            return False
+        with open(path, "rb") as f:
+            magic = f.read(4)
+            cls = f.read(1)
+        return magic == b"\x7fELF" and cls == b"\x02"
+    except Exception:
+        return False
+
+
+def ensure_steamclient(tree, workdir):
+    """确保精简树根目录有有效的 64 位 steamclient.so。
+
+    若缺失/损坏，从 Steam 客户端更新清单（bins_sdk_ubuntu12.zip）重新获取。
+    供 prebuilt 模式使用（source 模式由 get-cs2slim 脚本负责下载）。
+    """
+    dst = os.path.join(tree, "steamclient.so")
+    if _is_valid_elf64(dst, 40_000_000):
+        print("  steamclient.so 已存在且有效 (ELF 64-bit)")
+        return
+
+    print("  steamclient.so 缺失或无效，从 Steam SDK 包重新获取 ...")
+    manifest_path = os.path.join(workdir, "steam_client_ubuntu12")
+    download_file(STEAM_MANIFEST_URL, manifest_path, "Steam manifest")
+    with open(manifest_path, encoding="utf-8", errors="replace") as f:
+        content = f.read()
+    m = re.search(r'"bins_sdk_ubuntu12\.zip\.([0-9a-f]+)"', content)
+    if not m:
+        sys.exit("无法在 Steam manifest 中找到 bins_sdk_ubuntu12")
+    sdk_zip = os.path.join(workdir, "bins_sdk_ubuntu12.zip")
+    download_file(f"https://steamcdn-a.akamaihd.net/client/bins_sdk_ubuntu12.zip.{m.group(1)}",
+                  sdk_zip, "bins_sdk_ubuntu12")
+    with zipfile.ZipFile(sdk_zip) as z:
+        z.extract("linux64/steamclient.so", workdir)
+    os.replace(os.path.join(workdir, "linux64", "steamclient.so"), dst)
+    for p in (sdk_zip, manifest_path):
+        if os.path.exists(p):
+            os.remove(p)
+    shutil.rmtree(os.path.join(workdir, "linux64"), ignore_errors=True)
+    print("  steamclient.so 已更新")
 
 
 CORE_PREBUILT = {
@@ -479,6 +528,9 @@ def cmd_prebuilt(args, cfg):
     os.makedirs(tree, exist_ok=True)
     print(f"解压核心包到 {tree} ...")
     extract_archive(core_path, tree)
+    # 确保 steamclient.so 有效（缺失/损坏时自动从 Steam SDK 包补下）
+    if platform == "linux":
+        ensure_steamclient(tree, workdir)
     _update_start_scripts(platform, tree)
 
     # 3. 地图组件

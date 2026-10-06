@@ -8,9 +8,9 @@ cd "$(dirname "$0")"
 
 echo "[1/3] steamclient.so ..."
 if [ -f steamclient.so ]; then
-  mkdir -p /root/.steam/sdk64
-  ln -sf "$(readlink -f steamclient.so)" /root/.steam/sdk64/steamclient.so
-  echo "  OK -> /root/.steam/sdk64/steamclient.so"
+  mkdir -p "$HOME/.steam/sdk64"
+  ln -sf "$(readlink -f steamclient.so)" "$HOME/.steam/sdk64/steamclient.so"
+  echo "  OK -> $HOME/.steam/sdk64/steamclient.so"
 else
   echo "  WARN: steamclient.so 不存在于本目录，跳过 (服务端可能无法连接 Steam 网络)"
 fi

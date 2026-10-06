@@ -141,9 +141,11 @@ echo "game/csgo/pak01_$N.vpk" > iter.txt
 
 ### 7.1 steamclient.so（64 位）
 
-CS2 服务端需要 64 位 `steamclient.so`，放在 `/root/.steam/sdk64/steamclient.so`。
+CS2 服务端需要 64 位 `steamclient.so`，放在 `$HOME/.steam/sdk64/steamclient.so`（容器里 HOME 通常是 `/home/container`；非容器 root 则是 `/root`）。
 
 > ⚠️ 注意：新版 SteamCMD 官方包（`steamcmd_linux.tar.gz`）**已不再包含** `linux64/steamclient.so`（包内只有 linux32 内容）。请改用下面的 Steam SDK 包方法。
+>
+> 💡 一键脚本 prebuilt / source 模式以及 `start_server.sh` 已自动处理此文件（缺失时自动下载并链接到 `$HOME/.steam/sdk64/`）。以下为手动方法。
 
 从 Steam 客户端更新清单（`bins_sdk_ubuntu12.zip`）获取 `linux64/steamclient.so`：
 ```bash
@@ -162,8 +164,15 @@ os.replace("linux64/steamclient.so", "steamclient.so")
 PY
 rm -rf linux64 bins_sdk.zip manifest.txt
 # 4) 链接到服务端 sdk64
-mkdir -p /root/.steam/sdk64
-ln -sf /workspace/tools/steamclient64/steamclient.so /root/.steam/sdk64/steamclient.so
+mkdir -p "$HOME/.steam/sdk64"
+ln -sf /workspace/tools/steamclient64/steamclient.so "$HOME/.steam/sdk64/steamclient.so"
+```
+
+如果启动时出现 `Failed to load module '.../.steam/sdk64/steamclient.so'` 并段错误，通常是该符号链接缺失/指向无效文件，或 steamclient.so 被截断。可用以下命令诊断：
+```bash
+ls -la "$HOME/.steam/sdk64/"
+file "$HOME/.steam/sdk64/steamclient.so"   # 应输出 ELF 64-bit ... x86-64
+readlink -f "$HOME/.steam/sdk64/steamclient.so"
 ```
 
 ### 7.2 V8 库符号链接（关键坑）
