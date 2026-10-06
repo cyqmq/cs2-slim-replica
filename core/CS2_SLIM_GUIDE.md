@@ -417,3 +417,57 @@ game\bin\win64\cs2.exe -dedicated +map de_dust2 +hostname "SlimTest" \
   （本次删除 `pak01_505.vpk`），无需手工干预。
 - **方法持久性得到实测验证**：只要按 5.2 节"迭代补充"处理启动时报缺的编号包，
   精简法可以跟随任意 CS2 版本。
+
+---
+
+## 十五、多仓库架构与 cs2slim CLI（可选）
+
+> 为方便按需组合「精简核心 + 地图 + 功能」，配方拆成**多仓库**，并提供配置/参数驱动的入口脚本。
+
+### 15.1 仓库分工
+
+| 仓库 | 角色 |
+|------|------|
+| cyqmq/cs2-slim-replica | **主仓库**：核心配方（本指南 + filelist + 脚本）+ 入口 CLI cs2slim.py + 组件注册表 |
+| cyqmq/cs2-slim-maps | 地图组件：每图一个 ilelist.txt 片段 + 元数据，可选预构建包 |
+| cyqmq/cs2-slim-features | 功能组件：bots 人机（服务端 bot 玩法 + 客户端离线练习） |
+
+核心 filelist 已包含全部 prefabs，因此**选配地图只需把地图 VPK**（如 game/csgo/maps/de_mirage.vpk）追加到下载清单。
+bots 是引擎内置功能，无需额外 depot 文件，只需 cfg 配置。
+
+### 15.2 CLI 子命令
+
+`ash
+python cs2slim.py init                  # 生成 slim.yaml 模板
+python cs2slim.py download --config slim.yaml   # 组合 filelist + 调用 DepotDownloader
+python cs2slim.py extract  --config slim.yaml   # 提取 loose files
+python cs2slim.py build    --config slim.yaml    # 组装精简树（含选配地图）
+python cs2slim.py package  --config slim.yaml --format zip
+python cs2slim.py run      --config slim.yaml   # 启动服务端
+`
+
+### 15.3 配置驱动（推荐）
+
+编辑 slim.yaml：
+
+`yaml
+platform: win64            # linux | win64
+maps:
+  - de_dust2
+  - de_mirage            # 选配地图
+features:
+  - bots                 # 选配功能
+workdir: ./cs2-build
+depot_tool: C:\path\to\DepotDownloader.exe
+`
+
+### 15.4 纯命令行参数
+
+`ash
+python cs2slim.py download --platform linux --maps de_dust2,de_mirage --features bots
+`
+
+### 15.5 预构建包（可选）
+
+- 地图：从 cs2-slim-maps Release 下载 de_mirage.zip 等，解压到 game/csgo/maps/。
+- 功能：从 cs2-slim-features Release 下载 ots-pack.zip，解压后按说明部署 cfg。
