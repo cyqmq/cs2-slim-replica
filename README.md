@@ -35,6 +35,49 @@
 - `scripts/download_chunks.py` — Steam CDN 限速时的 1MB Range 分块下载器
 - `scripts/rebuild_slim.py` — 一键组装双平台精简树（支持 `--base-dir` / `--maps`）
 
+## 一键安装（零依赖，自动下载工具）
+
+无需预先安装 DepotDownloader / SteamCMD，一条命令完成「下载工具 → 获取配方 → 下载 depot → 提取 → 组装」。
+
+### Linux (curl | bash)
+
+```bash
+# 默认: de_dust2 精简服务端
+curl -fsSL https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs2slim.sh | bash
+
+# 选配: 地图 + 人机 + 打包
+CS2_MAPS=de_dust2,de_mirage CS2_FEATURES=bots CS2_PACKAGE=1 \
+  curl -fsSL https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs2slim.sh | bash
+```
+
+### Windows (irm | iex)
+
+```powershell
+# 默认: de_dust2 精简服务端
+irm https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs2slim.ps1 | iex
+
+# 选配: 地图 + 人机 + 打包
+$env:CS2_MAPS = 'de_dust2,de_mirage'; $env:CS2_FEATURES = 'bots'; $env:CS2_PACKAGE = '1'
+irm https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs2slim.ps1 | iex
+```
+
+### 环境变量
+
+| 变量 | 说明 | 默认 |
+|------|------|------|
+| `CS2_MAPS` | 逗号分隔地图 | de_dust2 |
+| `CS2_FEATURES` | 逗号分隔功能 | (空) |
+| `CS2_WORKDIR` | 工作目录 | `~/cs2-slim-build` |
+| `CS2_PACKAGE` | 1=完成后打包 | 0 |
+| `CS2_DRY_RUN` | 1=只生成配置不下载（预览） | 0 |
+
+### CLI 一键模式（等价）
+
+```bash
+python cs2slim.py all --config slim.yaml           # download + extract + build
+python cs2slim.py all --config slim.yaml --package  # 全流程 + 打包
+```
+
 ## 快速开始（CLI 方式，推荐）
 
 ### 1. 生成配置

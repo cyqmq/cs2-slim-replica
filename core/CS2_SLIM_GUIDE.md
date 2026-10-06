@@ -471,3 +471,37 @@ python cs2slim.py download --platform linux --maps de_dust2,de_mirage --features
 
 - 地图：从 cs2-slim-maps Release 下载 de_mirage.zip 等，解压到 game/csgo/maps/。
 - 功能：从 cs2-slim-features Release 下载 ots-pack.zip，解压后按说明部署 cfg。
+
+### 15.6 一键安装（curl | bash / irm | iex）
+
+主仓库提供零依赖一键脚本，自动下载 DepotDownloader 与 steamclient，并执行 cs2slim.py all（download + extract + build）。
+
+**Linux（curl | bash）**
+
+`ash
+# 默认: de_dust2
+curl -fsSL https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs2slim.sh | bash
+
+# 选配地图/人机/打包
+CS2_MAPS=de_dust2,de_mirage CS2_FEATURES=bots CS2_PACKAGE=1 \
+  curl -fsSL https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs2slim.sh | bash
+`
+
+**Windows（irm | iex）**
+
+`powershell
+irm https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs2slim.ps1 | iex
+
+ = 'de_dust2,de_mirage';  = 'bots';  = '1'
+irm https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs2slim.ps1 | iex
+`
+
+**CLI 一键模式（等价）**
+
+`ash
+python cs2slim.py all --config slim.yaml           # download + extract + build
+python cs2slim.py all --config slim.yaml --package  # 全流程 + 打包
+`
+
+一键脚本支持环境变量：CS2_MAPS / CS2_FEATURES / CS2_WORKDIR / CS2_PACKAGE / CS2_DRY_RUN。
+CS2_DRY_RUN=1 时只生成配置并打印将执行的命令，不实际下载（可用于预览）。

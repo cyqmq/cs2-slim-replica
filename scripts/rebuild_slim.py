@@ -281,16 +281,23 @@ def main():
                     help="工作目录（含 depot/ 和 loose/），默认 cs2-replica")
     ap.add_argument("--maps", default="",
                     help="额外地图名，逗号分隔，如 de_mirage,de_inferno（de_dust2 始终包含）")
+    ap.add_argument("--platforms", default="linux,win64",
+                    help="要组装的平台，逗号分隔（linux/win64），默认两个都组装")
     args = ap.parse_args()
 
     configure_paths(args.base_dir)
     extra_maps = [m.strip() for m in args.maps.split(",") if m.strip()]
+    platforms = [p.strip() for p in args.platforms.split(",") if p.strip()]
 
-    assemble_linux(extra_maps)
-    assemble_windows(extra_maps)
+    if "linux" in platforms:
+        assemble_linux(extra_maps)
+    if "win64" in platforms:
+        assemble_windows(extra_maps)
     print()
-    report(SLIM, "slim   (Linux)")
-    report(SLIM_WIN, "slim-win (Windows)")
+    if "linux" in platforms:
+        report(SLIM, "slim   (Linux)")
+    if "win64" in platforms:
+        report(SLIM_WIN, "slim-win (Windows)")
     print("REBUILD DONE")
 
 

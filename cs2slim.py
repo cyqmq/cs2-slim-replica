@@ -85,7 +85,8 @@ def parse_yaml_simple(text):
 def load_config(path):
     if not os.path.exists(path):
         sys.exit(f"配置不存在: {path}")
-    text = open(path, encoding="utf-8").read()
+    # utf-8-sig 自动去除 BOM (PowerShell Set-Content -Encoding UTF8 会写 BOM)
+    text = open(path, encoding="utf-8-sig").read()
     if path.lower().endswith(".json"):
         return json.loads(text)
     return parse_yaml_simple(text)
@@ -192,6 +193,8 @@ def cmd_download(args, cfg):
     print(f"组合 filelist: {combined_path} ({len(combined)} 行)")
 
     depot_tool = cfg.get("depot_tool") or args.depot_tool
+    if depot_tool and not os.path.exists(depot_tool):
+        sys.exit(f"depot_tool 不存在: {depot_tool}")
     jobs = [
         ("2347770", combined_path),
         (binary_depot, core_binary),
@@ -235,15 +238,17 @@ def cmd_extract(args, cfg):
 
 def cmd_build(args, cfg):
     workdir = os.path.abspath(cfg.get("workdir") or "./cs2-build")
+    platform = cfg.get("platform") or "win64"
     maps = resolve_maps(cfg)
     extra = [m for m in maps if m != "de_dust2"]
-    print(f"组装平台 {cfg.get('platform') or '全部'}，地图: {maps}，额外: {extra or '无'}")
+    print(f"组装平台 {platform}，地图: {maps}，额外: {extra or '无'}")
     r = subprocess.run([sys.executable, os.path.join(SCRIPTS_DIR, "rebuild_slim.py"),
-                       "--base-dir", workdir,
-                       "--maps", ",".join(extra)])
+                     "--base-dir", workdir,
+                     "--maps", ",".join(extra),
+                     "--platforms", platform])
     if r.returncode != 0:
         sys.exit("组装失败")
-    print("组装完成。下一步: python cs2slim.py package --config <path>")
+    print("组装完成。下一步: python cs2slim.py package --config <path> 或 run 启动")
 
 
 def cmd_package(args, cfg):
@@ -296,6 +301,36 @@ def cmd_run(args, cfg):
 
 
 # ---------------------------------------------------------------------------
+# 一键全流程: download + extract + build (+package)
+# ---------------------------------------------------------------------------
+def cmd_all(args, cfg):
+    if not (cfg.get("depot_tool") or args.depot_tool):
+        sys.exit("一键模式需要 depot_tool（slim.yaml 设置 或 --depot-tool 指定）")
+    print("=" * 60)
+    print(">>> [1/4] 下载 depot（按配置组合 filelist）")
+    cmd_download(args, cfg)
+    print("=" * 60)
+    print(">>> [2/4] 提取 loose files")
+    cmd_extract(args, cfg)
+    print("=" * 60)
+    print(">>> [3/4] 组装精简树")
+    cmd_build(args, cfg)
+    if getattr(args, "package", False):
+        print("=" * 60)
+        print(">>> [4/4] 打包")
+        cmd_package(args, cfg)
+    else:
+        print("=" * 60)
+        platform = cfg.get("platform") or "win64"
+        print("一键完成! 精简树已就绪:")
+        if platform == "linux":
+            print("  启动: bash <workdir>/slim/start_server.sh")
+        else:
+            print("  启动: <workdir>/slim-win/start_server.bat")
+        print("  打包: python cs2slim.py package --config <path> --format zip")
+
+
+# ---------------------------------------------------------------------------
 # 主入口
 # ---------------------------------------------------------------------------
 def main():
@@ -341,6 +376,12 @@ def main():
     p_run.add_argument("--map", default="de_dust2")
     add_common(p_run)
     p_run.set_defaults(func=cmd_run)
+
+    p_all = sub.add_parser("all", help="一键全流程: download + extract + build (+package)")
+    p_all.add_argument("--package", action="store_true", help="完成后打包")
+    p_all.add_argument("--format", choices=["zip", "tar.gz"], default="tar.gz")
+    add_common(p_all)
+    p_all.set_defaults(func=cmd_all)
 
     args = ap.parse_args()
 
