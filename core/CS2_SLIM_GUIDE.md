@@ -499,17 +499,23 @@ python cs2slim.py download --platform linux --maps de_dust2,de_mirage --features
 
 **Linux（curl | bash）**
 
+> ⚠️ 管道右侧的 `bash` 收不到 `CS2_MODE=... curl ... | bash` 里的变量，请先用 `export` 设置。
+
 ```bash
 # 默认: de_dust2（source 模式）
 curl -fsSL https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs2slim.sh | bash
 
 # 选配地图/人机/打包（source 模式）
-CS2_MAPS=de_dust2,de_mirage CS2_FEATURES=bots CS2_PACKAGE=1 \
-  curl -fsSL https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs2slim.sh | bash
+export CS2_MAPS=de_dust2,de_mirage CS2_FEATURES=bots CS2_PACKAGE=1
+curl -fsSL https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs2slim.sh | bash
 
 # 预构建模式: 直接拉取 Release 包自动拼装
-CS2_MODE=prebuilt CS2_MAPS=de_dust2,de_mirage CS2_FEATURES=bots \
-  curl -fsSL https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs2slim.sh | bash
+export CS2_MODE=prebuilt CS2_MAPS=de_dust2,de_mirage CS2_FEATURES=bots
+curl -fsSL https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs2slim.sh | bash
+
+# 国内网络受限: 加 GitHub 加速代理
+export CS2_GH_PROXY=https://ghproxy.com CS2_MODE=prebuilt CS2_MAPS=de_dust2,de_mirage
+curl -fsSL https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs2slim.sh | bash
 ```
 
 **Windows（irm | iex）**
@@ -525,6 +531,10 @@ irm https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs
 # 预构建模式: 直接拉取 Release 包自动拼装
 $env:CS2_MODE = 'prebuilt'; $env:CS2_MAPS = 'de_dust2,de_mirage'; $env:CS2_FEATURES = 'bots'
 irm https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs2slim.ps1 | iex
+
+# 国内网络受限: 加 GitHub 加速代理
+$env:CS2_GH_PROXY = 'https://ghproxy.com'; $env:CS2_MODE = 'prebuilt'; $env:CS2_MAPS = 'de_dust2,de_mirage'
+irm https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs2slim.ps1 | iex
 ```
 
 **CLI 一键模式（等价）**
@@ -536,5 +546,5 @@ python cs2slim.py prebuilt --config slim.yaml        # prebuilt: 拉取 Release 
 python cs2slim.py prebuilt --config slim.yaml --dry-run  # 只预览要下载的包
 ```
 
-一键脚本支持环境变量：CS2_MODE / CS2_MAPS / CS2_FEATURES / CS2_WORKDIR / CS2_PACKAGE / CS2_DRY_RUN。
+一键脚本支持环境变量：CS2_MODE / CS2_MAPS / CS2_FEATURES / CS2_WORKDIR / CS2_PACKAGE / CS2_DRY_RUN / CS2_GH_PROXY。
 CS2_DRY_RUN=1 时只生成配置并打印将执行的命令，不实际下载（可用于预览）。

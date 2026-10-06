@@ -35,6 +35,7 @@ import shutil
 import subprocess
 import sys
 import tarfile
+import urllib.error
 import urllib.request
 import zipfile
 
@@ -100,7 +101,7 @@ def load_config(path):
 def load_registry(name, registry_base=None):
     """读取组件注册表 JSON。registry_base 为远程 raw URL 时优先远程。"""
     if registry_base:
-        url = registry_base.rstrip("/") + "/" + name
+        url = gh_proxy_url(registry_base.rstrip("/") + "/" + name)
         try:
             with urllib.request.urlopen(url, timeout=15) as r:
                 return json.loads(r.read().decode("utf-8"))
@@ -163,14 +164,50 @@ def build_combined_filelist(core_filelist, cfg, registry_base=None):
 # ---------------------------------------------------------------------------
 # 下载/解压工具
 # ---------------------------------------------------------------------------
+def gh_proxy_url(url):
+    """若设置了 CS2_GH_PROXY（如 https://ghproxy.com），为 GitHub URL 加代理前缀。"""
+    proxy = os.environ.get("CS2_GH_PROXY", "").strip().rstrip("/")
+    if proxy and (url.startswith("https://github.com/")
+                  or url.startswith("https://raw.githubusercontent.com/")):
+        return f"{proxy}/{url}"
+    return url
+
+
 def download_file(url, dest, desc=""):
-    """下载文件到 dest，带进度显示。失败时清理并退出。"""
+    """下载文件到 dest，带进度显示 + 断点续传。
+
+    未完成部分保存在 dest.part；中断后再次运行会从断点继续（HTTP Range）。
+    失败时保留 .part，不清理。
+    """
+    url = gh_proxy_url(url)
     print(f"下载 {desc or os.path.basename(dest)} ...")
     tmp = dest + ".part"
+    resume = os.path.getsize(tmp) if os.path.exists(tmp) else 0
+    if resume:
+        print(f"  检测到未完成下载 ({resume/1024/1024:.1f} MB)，断点续传 ...")
+
+    def open_conn():
+        headers = {"Range": f"bytes={resume}-"} if resume else {}
+        req = urllib.request.Request(url, headers=headers)
+        try:
+            return urllib.request.urlopen(req, timeout=60)
+        except urllib.error.HTTPError as e:
+            if e.code == 416 and resume:  # Range 不可满足: 重下
+                os.remove(tmp)
+                nonlocal_resume_zero()
+                return urllib.request.urlopen(urllib.request.Request(url), timeout=60)
+            raise
+
+    def nonlocal_resume_zero():
+        nonlocal resume
+        resume = 0
+
     try:
-        with urllib.request.urlopen(url, timeout=60) as r, open(tmp, "wb") as f:
-            total = int(r.headers.get("Content-Length") or 0)
-            done = 0
+        with open_conn() as r, open(tmp, "ab" if resume and r.status == 206 else "wb") as f:
+            if r.status == 200:
+                resume = 0
+            total = int(r.headers.get("Content-Length") or 0) + resume
+            done = resume
             while True:
                 chunk = r.read(1024 * 1024)
                 if not chunk:
@@ -183,9 +220,8 @@ def download_file(url, dest, desc=""):
         print()
         os.replace(tmp, dest)
     except Exception as e:
-        if os.path.exists(tmp):
-            os.remove(tmp)
-        sys.exit(f"下载失败 {url}: {e}")
+        # 保留 .part 供断点续传
+        sys.exit(f"下载失败 {url}: {e} (已保留 {tmp}，下次运行可断点续传)")
 
 
 def extract_archive(path, dest):
@@ -222,6 +258,7 @@ def _update_start_scripts(platform, tree):
         else:
             url = "https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/core/deploy/windows/start_server.bat"
             dst = os.path.join(tree, "start_server.bat")
+        url = gh_proxy_url(url)
         tmp = dst + ".new"
         urllib.request.urlretrieve(url, tmp)
         os.replace(tmp, dst)

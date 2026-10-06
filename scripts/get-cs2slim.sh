@@ -12,10 +12,15 @@
 #   CS2_WORKDIR   工作目录, 默认 $HOME/cs2-slim-build
 #   CS2_PACKAGE   1=完成后打包 tar.gz, 默认 0
 #   CS2_DRY_RUN   1=只生成配置不下载(预览), 默认 0
+#   CS2_GH_PROXY  GitHub 加速代理前缀(如 https://ghproxy.com), 用于仓库/Release 下载
+#
+# 重要: 使用 curl | bash 时，请先用 export 设置变量！
+#   错误: CS2_MODE=prebuilt ... curl ... | bash   (变量只传给 curl，bash 收不到)
+#   正确: export CS2_MODE=prebuilt CS2_MAPS=...; curl ... | bash
 #
 # 示例:
-#   CS2_MAPS=de_dust2,de_mirage CS2_FEATURES=bots \
-#     curl -fsSL https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs2slim.sh | bash
+#   export CS2_MODE=prebuilt CS2_MAPS=de_dust2,de_mirage CS2_FEATURES=bots
+#   curl -fsSL https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs2slim.sh | bash
 #
 set -euo pipefail
 
@@ -26,7 +31,6 @@ WORKDIR="${CS2_WORKDIR:-$HOME/cs2-slim-build}"
 PACKAGE="${CS2_PACKAGE:-0}"
 DRY_RUN="${CS2_DRY_RUN:-0}"
 MODE="${CS2_MODE:-source}"
-REPO_URL="https://github.com/cyqmq/cs2-slim-replica.git"
 DD_URL="https://github.com/SteamRE/DepotDownloader/releases/download/DepotDownloader_3.4.0/DepotDownloader-linux-x64.zip"
 STEAM_MANIFEST_URL="https://client-update.akamai.steamstatic.com/steam_client_ubuntu12"
 
@@ -55,7 +59,7 @@ else
   if [ ! -f "$DD_DIR/DepotDownloader" ]; then
     echo "[1/5] 下载 DepotDownloader ..."
     mkdir -p "$DD_DIR"
-    curl -fsSL -o "$DD_DIR/dd.zip" "$DD_URL"
+    curl -fL --retry 3 -C - --progress-bar -o "$DD_DIR/dd.zip" "$DD_URL"
     $PY - "$DD_DIR" <<'PY'
 import sys, zipfile, os
 d = sys.argv[1]
@@ -79,13 +83,13 @@ else
   if [ ! -f "$SC_DIR/steamclient.so" ]; then
     echo "[2/5] 下载 Steam SDK 获取 steamclient.so ..."
     mkdir -p "$SC_DIR"
-    curl -fsSL -o "$SC_DIR/steam_client_ubuntu12" "$STEAM_MANIFEST_URL"
+    curl -fL --retry 3 -C - -o "$SC_DIR/steam_client_ubuntu12" "$STEAM_MANIFEST_URL"
     SDK_FILE=$(grep -A4 '"bins_sdk_ubuntu12"' "$SC_DIR/steam_client_ubuntu12" | grep '"file"' | sed -n 's/.*"file"[[:space:]]*"\([^"]*\)".*/\1/p')
     if [ -z "$SDK_FILE" ]; then
       echo "错误: 无法在 Steam manifest 中找到 bins_sdk_ubuntu12" >&2
       exit 1
     fi
-    curl -fsSL -o "$SC_DIR/bins_sdk.zip" "https://steamcdn-a.akamaihd.net/client/$SDK_FILE"
+    curl -fL --retry 3 -C - --progress-bar -o "$SC_DIR/bins_sdk.zip" "https://steamcdn-a.akamaihd.net/client/$SDK_FILE"
     $PY - "$SC_DIR" <<'PY'
 import sys, zipfile, os
 d = sys.argv[1]
@@ -98,16 +102,50 @@ PY
   fi
 fi
 
-# --- 3. 获取主仓库 ---
+# --- 3. 获取主仓库 (带 GitHub 镜像回退) ---
 REPO_DIR="$WORKDIR/repo"
-if [ ! -d "$REPO_DIR/.git" ]; then
+GIT_URLS=(
+  "https://github.com/cyqmq/cs2-slim-replica.git"
+  "https://ghproxy.com/https://github.com/cyqmq/cs2-slim-replica.git"
+  "https://gitclone.com/github.com/cyqmq/cs2-slim-replica.git"
+  "https://ghfast.top/https://github.com/cyqmq/cs2-slim-replica.git"
+)
+TAR_URLS=(
+  "https://github.com/cyqmq/cs2-slim-replica/archive/refs/heads/main.tar.gz"
+  "https://ghproxy.com/https://github.com/cyqmq/cs2-slim-replica/archive/refs/heads/main.tar.gz"
+  "https://gh-proxy.com/https://github.com/cyqmq/cs2-slim-replica/archive/refs/heads/main.tar.gz"
+  "https://ghfast.top/https://github.com/cyqmq/cs2-slim-replica/archive/refs/heads/main.tar.gz"
+  "https://github.moeyy.xyz/https://github.com/cyqmq/cs2-slim-replica/archive/refs/heads/main.tar.gz"
+)
+if [ ! -d "$REPO_DIR/.git" ] && [ ! -f "$REPO_DIR/cs2slim.py" ]; then
   echo "[3/5] 获取主仓库 ..."
+  # 尝试 git clone（多镜像）
   if command -v git >/dev/null 2>&1; then
-    git clone --depth 1 "$REPO_URL" "$REPO_DIR"
-  else
+    for url in "${GIT_URLS[@]}"; do
+      echo "  尝试: git clone $url"
+      if git clone --depth 1 "$url" "$REPO_DIR" >/dev/null 2>&1; then
+        break
+      fi
+      rm -rf "$REPO_DIR"
+    done
+  fi
+  # git clone 失败则尝试源码包
+  if [ ! -d "$REPO_DIR/.git" ] && [ ! -f "$REPO_DIR/cs2slim.py" ]; then
     mkdir -p "$REPO_DIR"
-    curl -fsSL "https://github.com/cyqmq/cs2-slim-replica/archive/refs/heads/main.tar.gz" \
-      | tar xz --strip-components=1 -C "$REPO_DIR"
+    for url in "${TAR_URLS[@]}"; do
+      echo "  尝试: 下载源码包 $url"
+      if curl -fL --retry 2 -C - -o "$WORKDIR/repo.tar.gz" "$url" \
+          && tar xzf "$WORKDIR/repo.tar.gz" --strip-components=1 -C "$REPO_DIR" 2>/dev/null; then
+        rm -f "$WORKDIR/repo.tar.gz"
+        break
+      fi
+      rm -rf "$REPO_DIR"/* "$WORKDIR/repo.tar.gz"
+    done
+  fi
+  if [ ! -d "$REPO_DIR/.git" ] && [ ! -f "$REPO_DIR/cs2slim.py" ]; then
+    echo "错误: 无法从 GitHub 获取主仓库（网络受限）。可设置加速代理后重试:" >&2
+    echo "  export CS2_GH_PROXY=https://ghproxy.com" >&2
+    exit 1
   fi
 fi
 

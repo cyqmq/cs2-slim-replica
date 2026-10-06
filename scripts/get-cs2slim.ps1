@@ -10,6 +10,9 @@
 #   $env:CS2_PACKAGE  '1' = package zip after build
 #   $env:CS2_DRY_RUN  '1' = only write config, no download (preview)
 #   $env:CS2_MODE     'source' (default, build from depot) | 'prebuilt' (pull Release packages)
+#   $env:CS2_GH_PROXY  GitHub accelerator prefix (e.g. https://ghproxy.com) for repo/Release downloads
+#
+# Note: big downloads use curl.exe with resume (-C -) and a progress bar.
 #
 # Example:
 #   $env:CS2_MAPS = 'de_dust2,de_mirage'; $env:CS2_FEATURES = 'bots'
@@ -23,9 +26,16 @@ $Workdir = if ($env:CS2_WORKDIR) { $env:CS2_WORKDIR } else { Join-Path $HOME 'cs
 $Package = if ($env:CS2_PACKAGE -eq '1') { $true } else { $false }
 $DryRun = if ($env:CS2_DRY_RUN -eq '1') { $true } else { $false }
 $Mode = if ($env:CS2_MODE) { $env:CS2_MODE } else { 'source' }
-$RepoUrl = 'https://github.com/cyqmq/cs2-slim-replica.git'
+$GhProxy = if ($env:CS2_GH_PROXY) { $env:CS2_GH_PROXY.TrimEnd('/') } else { '' }
 $DDUrl = 'https://github.com/SteamRE/DepotDownloader/releases/download/DepotDownloader_3.4.0/DepotDownloader-win-x64.zip'
 $SteamManifestUrl = 'https://client-update.akamai.steamstatic.com/steam_client_win32'
+
+function Get-GhUrl([string]$url) {
+  if ($GhProxy -and ($url -like 'https://github.com/*' -or $url -like 'https://raw.githubusercontent.com/*')) {
+    return "$GhProxy/$url"
+  }
+  return $url
+}
 
 $FeaturesDisplay = if ($Features) { $Features } else { 'none' }
 Write-Host "== cs2slim one-click installer (Windows) =="
@@ -58,7 +68,8 @@ if ($Mode -eq 'prebuilt') {
     Write-Host '[1/5] Downloading DepotDownloader ...'
     New-Item -ItemType Directory -Force -Path $DDDir | Out-Null
     $ddZip = "$DDDir\dd.zip"
-    Invoke-WebRequest -Uri $DDUrl -OutFile $ddZip
+    curl.exe -L --retry 3 -C - --progress-bar -o $ddZip (Get-GhUrl $DDUrl)
+    if ($LASTEXITCODE -ne 0) { throw 'Failed to download DepotDownloader' }
     Expand-Archive -Path $ddZip -DestinationPath $DDDir -Force
     Remove-Item -Force $ddZip
   }
@@ -75,12 +86,14 @@ if ($Mode -eq 'prebuilt') {
     Write-Host '[2/5] Fetching Steam client update package (steamclient DLL) ...'
     New-Item -ItemType Directory -Force -Path $SCDir | Out-Null
     $manifest = "$Workdir\tools\steam_client_win32"
-    Invoke-WebRequest -Uri $SteamManifestUrl -OutFile $manifest
+    curl.exe -L --retry 3 -C - -o $manifest $SteamManifestUrl
+    if ($LASTEXITCODE -ne 0) { throw 'Failed to download Steam client manifest' }
     $m = Select-String -Path $manifest -Pattern 'bins_win32\.zip\.([0-9a-f]+)' | Select-Object -First 1
     if (-not $m) { throw 'Unable to find bins_win32.zip in Steam client manifest' }
     $sha = $m.Matches[0].Groups[1].Value
     $binZip = "$Workdir\tools\bins_win32.zip"
-    Invoke-WebRequest -Uri "https://steamcdn-a.akamaihd.net/client/bins_win32.zip.$sha" -OutFile $binZip
+    curl.exe -L --retry 3 -C - --progress-bar -o $binZip "https://steamcdn-a.akamaihd.net/client/bins_win32.zip.$sha"
+    if ($LASTEXITCODE -ne 0) { throw 'Failed to download bins_win32.zip' }
     $binDir = "$Workdir\tools\bins_win32"
     Expand-Archive -Path $binZip -DestinationPath $binDir -Force
     Copy-Item "$binDir\steamclient64.dll", "$binDir\tier0_s64.dll", "$binDir\vstdlib_s64.dll" $SCDir
@@ -89,18 +102,53 @@ if ($Mode -eq 'prebuilt') {
   }
 }
 
-# --- 3. Fetch main repo ---
+# --- 3. Fetch main repo (with GitHub mirror fallback) ---
 $RepoDir = "$Workdir\repo"
-if (-not (Test-Path "$RepoDir\.git")) {
+$GitUrls = @(
+  'https://github.com/cyqmq/cs2-slim-replica.git',
+  'https://ghproxy.com/https://github.com/cyqmq/cs2-slim-replica.git',
+  'https://gitclone.com/github.com/cyqmq/cs2-slim-replica.git',
+  'https://ghfast.top/https://github.com/cyqmq/cs2-slim-replica.git'
+)
+$TarUrls = @(
+  'https://github.com/cyqmq/cs2-slim-replica/archive/refs/heads/main.tar.gz',
+  'https://ghproxy.com/https://github.com/cyqmq/cs2-slim-replica/archive/refs/heads/main.tar.gz',
+  'https://gh-proxy.com/https://github.com/cyqmq/cs2-slim-replica/archive/refs/heads/main.tar.gz',
+  'https://ghfast.top/https://github.com/cyqmq/cs2-slim-replica/archive/refs/heads/main.tar.gz',
+  'https://github.moeyy.xyz/https://github.com/cyqmq/cs2-slim-replica/archive/refs/heads/main.tar.gz'
+)
+if (-not (Test-Path "$RepoDir\.git") -and -not (Test-Path "$RepoDir\cs2slim.py")) {
   Write-Host '[3/5] Fetching main repo ...'
+  # Try git clone via mirrors
   if (Get-Command git -ErrorAction SilentlyContinue) {
-    git clone --depth 1 $RepoUrl $RepoDir
-  } else {
+    foreach ($url in $GitUrls) {
+      Write-Host "  Trying: git clone $url"
+      $oldEap = $ErrorActionPreference
+      $ErrorActionPreference = 'Continue'
+      git clone --depth 1 $url $RepoDir
+      $cloneOk = ($LASTEXITCODE -eq 0)
+      $ErrorActionPreference = $oldEap
+      if ($cloneOk) { break }
+      if (Test-Path $RepoDir) { Remove-Item -Recurse -Force $RepoDir }
+    }
+  }
+  # Fallback: download source tarball via mirrors
+  if (-not (Test-Path "$RepoDir\.git") -and -not (Test-Path "$RepoDir\cs2slim.py")) {
     New-Item -ItemType Directory -Force -Path $RepoDir | Out-Null
-    $tar = "$Workdir\repo.tar.gz"
-    Invoke-WebRequest -Uri 'https://github.com/cyqmq/cs2-slim-replica/archive/refs/heads/main.tar.gz' -OutFile $tar
-    tar -xzf $tar -C $RepoDir --strip-components=1
-    Remove-Item -Force $tar
+    foreach ($url in $TarUrls) {
+      Write-Host "  Trying: download tarball $url"
+      $tar = "$Workdir\repo.tar.gz"
+      curl.exe -L --retry 2 -C - -o $tar (Get-GhUrl $url)
+      if ($LASTEXITCODE -eq 0) {
+        tar -xzf $tar -C $RepoDir --strip-components=1
+        if ($LASTEXITCODE -eq 0) { Remove-Item -Force $tar; break }
+      }
+      Remove-Item -Force $tar -ErrorAction SilentlyContinue
+      Get-ChildItem -Path $RepoDir -Force | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+    }
+  }
+  if (-not (Test-Path "$RepoDir\.git") -and -not (Test-Path "$RepoDir\cs2slim.py")) {
+    throw 'Failed to fetch main repo from GitHub (network restricted). Set $env:CS2_GH_PROXY (e.g. https://ghproxy.com) and retry.'
   }
 }
 

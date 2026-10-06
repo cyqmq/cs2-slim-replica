@@ -44,17 +44,23 @@
 
 ### Linux (curl | bash)
 
+> ⚠️ **重要**：管道右侧的 `bash` 收不到 `VAR=值 curl ... | bash` 里的变量（变量只传给 `curl`）。请**先用 `export`**：
+
 ```bash
 # 默认: de_dust2 精简服务端（source 模式）
 curl -fsSL https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs2slim.sh | bash
 
 # 选配: 地图 + 人机 + 打包（source 模式）
-CS2_MAPS=de_dust2,de_mirage CS2_FEATURES=bots CS2_PACKAGE=1 \
-  curl -fsSL https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs2slim.sh | bash
+export CS2_MAPS=de_dust2,de_mirage CS2_FEATURES=bots CS2_PACKAGE=1
+curl -fsSL https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs2slim.sh | bash
 
 # 预构建模式: 直接拉取 Release 包自动拼装（更快）
-CS2_MODE=prebuilt CS2_MAPS=de_dust2,de_mirage CS2_FEATURES=bots \
-  curl -fsSL https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs2slim.sh | bash
+export CS2_MODE=prebuilt CS2_MAPS=de_dust2,de_mirage CS2_FEATURES=bots
+curl -fsSL https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs2slim.sh | bash
+
+# 国内网络受限时，可加 GitHub 加速代理
+export CS2_GH_PROXY=https://ghproxy.com CS2_MODE=prebuilt CS2_MAPS=de_dust2,de_mirage
+curl -fsSL https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs2slim.sh | bash
 ```
 
 ### Windows (irm | iex)
@@ -70,6 +76,10 @@ irm https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs
 # 预构建模式: 直接拉取 Release 包自动拼装
 $env:CS2_MODE = 'prebuilt'; $env:CS2_MAPS = 'de_dust2,de_mirage'; $env:CS2_FEATURES = 'bots'
 irm https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs2slim.ps1 | iex
+
+# 国内网络受限时，可加 GitHub 加速代理
+$env:CS2_GH_PROXY = 'https://ghproxy.com'; $env:CS2_MODE = 'prebuilt'; $env:CS2_MAPS = 'de_dust2,de_mirage'
+irm https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs2slim.ps1 | iex
 ```
 
 ### 环境变量
@@ -82,6 +92,7 @@ irm https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs
 | `CS2_WORKDIR` | 工作目录 | `~/cs2-slim-build` |
 | `CS2_PACKAGE` | 1=完成后打包（仅 source 模式） | 0 |
 | `CS2_DRY_RUN` | 1=只生成配置不下载（预览） | 0 |
+| `CS2_GH_PROXY` | GitHub 加速代理前缀（如 `https://ghproxy.com`），自动用于仓库/Release 下载 | (空) |
 
 ### CLI 一键模式（等价）
 
