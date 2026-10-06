@@ -625,3 +625,30 @@ curl -fsSL https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts
 **验证**：启动后控制台输入 `meta version` / `meta list`；若显示 `Unknown command`，检查 `gameinfo.gi` 是否被 CS2 更新重置（重新拼装一次即可）。
 
 **后续**：安装 Metamod 后，可在 `game/csgo/addons/metamod/metaplugins.ini` 里加载其他插件（如 CounterStrikeSharp），或在 `slim.yaml` 的 `features` 中继续追加。
+
+### 15.9 CounterStrikeSharp（CSS）插件框架（Windows）
+
+CSS 是 CS2 服务端最常用的 **C# 插件框架**，运行在 Metamod 之上。Windows 版已作为功能组件发布（`css-win`，带 .NET 运行时，依赖 `metamod-win`）：
+
+```powershell
+$env:CS2_MODE = "prebuilt"; $env:CS2_FEATURES = "metamod-win,css-win"
+irm https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs2slim.ps1 | iex
+```
+
+拼装时自动完成：
+
+1. 先安装依赖 `metamod-win`（Metamod:Source Windows 版，自动补 `gameinfo.gi`）
+2. 解压 `css-pack-win.zip`（CounterStrikeSharp 1.0.376）到 `game/csgo/addons/`，注册文件 `addons/metamod/counterstrikesharp.vdf`
+
+**验证**：启动后控制台输入 `meta list`，应看到：
+
+```
+  [01] CounterStrikeSharp (v1.0.376 @ 653d651) by Roflmuffin
+```
+
+输入 `css_plugins list` 查看用户插件（默认 0 个）。把你的 CSS 插件 dll 放入 `game/csgo/addons/counterstrikesharp/plugins/`，重启服务端即可加载。
+
+**注意**：
+- 仅支持 Windows（win64）；Linux 版 CSS 后续提供。
+- 启动日志中的 `Could not PreloadLibrary ... Access violation` 是非致命警告，不影响 CSS 运行。
+- 本包使用 with-runtime 版，宿主机无需预装 .NET。
