@@ -348,6 +348,21 @@ def _patch_gameinfo_for_metamod(tree):
     print("  Metamod: 已在 gameinfo.gi 中添加 Game csgo/addons/metamod")
 
 
+def _expand_feature_deps(features, reg_feat):
+    """递归展开功能依赖（如 css-win -> metamod-win），保持原有顺序。"""
+    expanded = list(features)
+    seen = set(expanded)
+    i = 0
+    while i < len(expanded):
+        meta = reg_feat.get("features", {}).get(expanded[i])
+        for dep in (meta or {}).get("requires") or []:
+            if dep not in seen:
+                seen.add(dep)
+                expanded.append(dep)
+        i += 1
+    return expanded
+
+
 # ---------------------------------------------------------------------------
 # 子命令实现
 # ---------------------------------------------------------------------------
@@ -593,6 +608,7 @@ def cmd_prebuilt(args, cfg):
     # 4. 功能组件
     features = parse_csv(cfg.get("features") or [])
     reg_feat = load_registry("features.json", cfg.get("registry_base"))
+    features = _expand_feature_deps(features, reg_feat)
     for f in features:
         meta = reg_feat.get("features", {}).get(f)
         url = (meta or {}).get("prebuilt_url") or ""
