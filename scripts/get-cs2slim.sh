@@ -32,7 +32,10 @@ echo "== cs2slim 一键安装 (Linux) =="
 echo "地图: $MAPS / 功能: ${FEATURES:-无} / 工作目录: $WORKDIR"
 
 # --- 依赖检查 ---
-command -v python3 >/dev/null 2>&1 || { echo "错误: 需要 python3"; exit 1; }
+PY=""
+command -v python3 >/dev/null 2>&1 && PY="python3"
+if [ -z "$PY" ]; then command -v python >/dev/null 2>&1 && PY="python"; fi
+if [ -z "$PY" ]; then echo "错误: 需要 python3 或 python"; exit 1; fi
 command -v curl  >/dev/null 2>&1 || { echo "错误: 需要 curl"; exit 1; }
 
 mkdir -p "$WORKDIR/tools"
@@ -46,7 +49,7 @@ else
     echo "[1/5] 下载 DepotDownloader ..."
     mkdir -p "$DD_DIR"
     curl -fsSL -o "$DD_DIR/dd.zip" "$DD_URL"
-    python3 - "$DD_DIR" <<'PY'
+    $PY - "$DD_DIR" <<'PY'
 import sys, zipfile, os
 d = sys.argv[1]
 p = os.path.join(d, "dd.zip")
@@ -105,11 +108,11 @@ if [ "$PACKAGE" = "1" ]; then
 fi
 if [ "$DRY_RUN" = "1" ]; then
   echo "[5/5] (dry-run) 跳过一键执行"
-  echo "将执行: python3 $REPO_DIR/cs2slim.py all --config $CFG $PACKAGE_FLAG"
+  echo "将执行: $PY $REPO_DIR/cs2slim.py all --config $CFG $PACKAGE_FLAG"
   exit 0
 fi
 echo "[5/5] 开始下载/提取/组装 (首次约 1.5GB 下载, 请耐心等待) ..."
-python3 "$REPO_DIR/cs2slim.py" all --config "$CFG" $PACKAGE_FLAG
+$PY "$REPO_DIR/cs2slim.py" all --config "$CFG" $PACKAGE_FLAG
 
 echo
 echo "=============================================="
