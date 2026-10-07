@@ -699,8 +699,11 @@ cd <服务器根目录>          # 含 game/ 的目录
 
 **简幻欢单端口双服务（可选配置）**：简幻欢只分配一个端口（`SERVER_PORT`）。CS2 走 UDP，cs2lm 管理 Web 走 TCP——同一端口号两种协议互不冲突（已实测）。这是**可选配置**：默认不启动 Web；设置环境变量 `CS2LM_WEB=1` 且已安装 `link-manager` 时，启动脚本（Linux 面板 `start_panel.sh` / Linux 本地 `start_server.sh` / Windows `start_server.bat`）会在 `SERVER_PORT` 上启动 Web：
 
-- Token：优先用 `CS2LM_WEB_TOKEN` 环境变量；未设置则随机生成并写入服务器根目录 `web_token.txt`（权限 600）。
+- Token：优先用 `CS2LM_WEB_TOKEN` 环境变量；**无论是否设置，token 都会写入服务器根目录 `web_token.txt`**（未设置时随机生成 16 位十六进制，权限 600）。
 - 访问：`http://<服务器IP>:<端口>/?token=<TOKEN>`。
+- 运行中的 CS2 控制台可手动 `exec cs2slim_token.cfg` 查看 token（启动时已生成在 `game/csgo/cfg/cs2slim_token.cfg`，不自动加入启动参数）。
 - PID 存 `web.pid`（重启自动清理旧进程），日志在 `web.log`（Windows 另存 `web.err.log`），启动失败会在控制台警告。
 - Linux：面板 `CS2LM_WEB=1 bash start_panel.sh`；本地 `CS2LM_WEB=1 bash start_server.sh`。
 - Windows：在面板环境变量中配置 `CS2LM_WEB=1`，`start_server.bat` 即自动启用（需 `cs2lm.bat` 位于服务器根目录）。
+
+**一次性启动菜单**（三个启动脚本均内置）：首次交互启动时弹出菜单（`1` 完整启动 / `2` 只启动 Web / `3` 只启动 CS2 / `4` 查看 token / `5` 停止 Web / `6` 退出，15 秒无输入默认选 `1`），选择后 CS2 前台运行、日志正常显示。菜单只显示一次（`.cs2slim_menu_seen` 标记抑制后续显示）；想再次打开用 `bash start_server.sh menu`（面板场景可在 `start.sh` 顶部加 `export CS2LM_MENU=1` 或面板环境变量设 `CS2LM_MENU=1`）；面板自动重启建议设 `CS2LM_AUTO=1` 或启动命令加 `auto` 跳过菜单。

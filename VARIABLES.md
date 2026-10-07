@@ -63,13 +63,21 @@ start_server.bat
 | 变量 | 默认值 | 说明 |
 |---|---|---|
 | `CS2LM_WEB` | `0`（关闭） | `1` = 启用插件管理 Web（TCP），与 CS2 UDP 同端口共存。需要已安装 `link-manager` 功能 |
-| `CS2LM_WEB_TOKEN` | 空（随机生成） | Web 访问 token。设置后使用该固定 token；未设置则随机生成 16 位十六进制写入服务器根目录 `web_token.txt` |
+| `CS2LM_WEB_TOKEN` | 空（随机生成） | Web 访问 token。设置后使用该固定 token；**无论是否设置，token 都会写入服务器根目录 `web_token.txt`**（未设置时随机生成 16 位十六进制） |
+| `CS2LM_MENU` | 未设置 | `1` = 强制显示启动菜单（即使不是首次启动/没有终端）。面板里设置后每次点「启动」都会弹出菜单 |
+| `CS2LM_AUTO` | 未设置 | `1` = 强制跳过菜单，直接完整启动（面板自动重启 / 不想被菜单打扰时设置） |
 
 **示例**：
 
 ```bash
-# Linux 面板 / 本地：启用 Web 并指定 token
+# Linux 面板 / 本地：启用 Web 并指定 token（token 仍会写入 web_token.txt）
 CS2LM_WEB=1 CS2LM_WEB_TOKEN=my-secret bash start_server.sh
+
+# Linux：强制显示菜单（相当于 bash start_server.sh menu）
+CS2LM_MENU=1 bash start_server.sh
+
+# Linux：强制跳过菜单，直接完整启动（面板自动重启推荐）
+CS2LM_AUTO=1 bash start_server.sh
 
 # Windows
 set CS2LM_WEB=1
@@ -78,6 +86,31 @@ start_server.bat
 ```
 
 启用后访问：`http://<服务器IP>:<端口>/?token=<TOKEN>`（端口 = 上述端口变量的最终值）。
+
+运行中的 CS2 控制台可随时手动执行 `exec cs2slim_token.cfg` 查看当前 token（启动时已生成在 `game/csgo/cfg/cs2slim_token.cfg`）。
+
+---
+
+## 三·五、启动菜单（一次性交互菜单）
+
+三个启动脚本（Linux 本地 `start_server.sh` / Linux 面板 `start_panel.sh` / Windows `start_server.bat`）内置**一次性交互菜单**：
+
+- **什么时候显示**：仅在「有交互终端 且 首次启动（不存在 `.cs2slim_menu_seen` 标记）」时显示，或通过 `menu` 参数 / `CS2LM_MENU=1` 强制显示。
+- **菜单选项**：`1` 完整启动 / `2` 只启动 Web / `3` 只启动 CS2 / `4` 查看 token / `5` 停止 Web / `6` 退出。15 秒无输入默认选 `1`。
+- **选择后**：立即 `exec` CS2 前台运行，控制台正常显示服务端日志（菜单**不会**反复出现挡住日志）。
+- **再次打开菜单**：运行 `bash start_server.sh menu`（Windows `start_server.bat menu`）；面板场景可在 `start.sh` 顶部加 `export CS2LM_MENU=1`，或在面板环境变量里配置 `CS2LM_MENU=1`。
+- **跳过菜单**：`bash start_server.sh auto`（Windows `start_server.bat auto`）、`CS2LM_AUTO=1`、或非交互终端（无 TTY）都会直接完整启动，适合面板自动重启。
+
+**子命令速查**（Linux `start_server.sh` / 面板 `start.sh`，Windows 同参数）：
+
+| 命令 | 作用 |
+|---|---|
+| `bash start_server.sh` | 首次交互启动显示菜单；之后直接完整启动 |
+| `bash start_server.sh menu` | 强制显示菜单（想再次打开时使用） |
+| `bash start_server.sh auto` | 跳过菜单，直接完整启动（面板自动重启推荐） |
+| `bash start_server.sh web` | 只启动插件管理 Web（打印 token） |
+| `bash start_server.sh token` | 只显示当前 token |
+| `bash start_server.sh webstop` | 停止插件管理 Web |
 
 ---
 
@@ -106,5 +139,7 @@ start_server.bat
 | `SERVER_PORT` | 未设置 | 面板端口（最高优先） | 运行 |
 | `CS2_PORT` | `27015` | 用户指定端口 | 运行 |
 | `CS2LM_WEB` | `0` | 启用插件管理 Web | 运行 |
-| `CS2LM_WEB_TOKEN` | 空（随机） | Web token | 运行 |
+| `CS2LM_WEB_TOKEN` | 空（随机） | Web token（固定值，仍会写入 `web_token.txt`） | 运行 |
+| `CS2LM_MENU` | 未设置 | `1` = 强制显示启动菜单 | 运行 |
+| `CS2LM_AUTO` | 未设置 | `1` = 强制跳过菜单 | 运行 |
 | `CS2_SLIM_DIR` | `$HOME/cs2-slim-build/slim` | 精简树路径 | 面板启动 |

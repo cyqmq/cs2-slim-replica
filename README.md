@@ -58,12 +58,16 @@ irm https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs
 ## 启动服务端
 
 ```bash
-# 普通模式
+# 普通模式（首次交互启动会弹出一次性菜单，15 秒无输入默认完整启动）
 bash ~/cs2-slim-build/slim/start_server.sh
 
 # 面板模式（面板启动命令填: bash start.sh；首次启动会自动安装）
 bash ~/start.sh
 ```
+
+**一次性菜单**：选择后 CS2 前台运行，日志正常显示；菜单不会反复出现。再次打开菜单用 `bash start_server.sh menu`（面板场景可在 `start.sh` 顶部加 `export CS2LM_MENU=1`，或在面板环境变量配置 `CS2LM_MENU=1`）。跳过菜单用 `bash start_server.sh auto` 或 `CS2LM_AUTO=1`（面板自动重启推荐）。
+
+**子命令**：`menu`（显示菜单）/ `auto`（跳过菜单完整启动）/ `web`（只启动插件管理 Web）/ `token`（查看 token）/ `webstop`（停止 Web）。
 
 首次启动会自动链接 `steamclient.so` 到 `~/.steam/sdk64/` 并创建 V8 符号链接；若出现 `Failed to load module '...steamclient.so'`，重跑一键脚本（prebuilt 会自动校验/补下）或参考指南 7.1 节诊断。
 
