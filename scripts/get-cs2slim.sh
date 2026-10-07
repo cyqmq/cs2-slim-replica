@@ -33,8 +33,15 @@ PACKAGE="${CS2_PACKAGE:-0}"
 DRY_RUN="${CS2_DRY_RUN:-0}"
 MODE="${CS2_MODE:-source}"
 PANEL="${CS2_PANEL:-0}"
+GH_PROXY="${CS2_GH_PROXY:-}"
 DD_URL="https://github.com/SteamRE/DepotDownloader/releases/download/DepotDownloader_3.4.0/DepotDownloader-linux-x64.zip"
 STEAM_MANIFEST_URL="https://client-update.akamai.steamstatic.com/steam_client_ubuntu12"
+
+# CS2_MODE 枚举校验
+if [ "$MODE" != "source" ] && [ "$MODE" != "prebuilt" ]; then
+  echo "错误: CS2_MODE 仅支持 source 或 prebuilt（当前: $MODE）" >&2
+  exit 1
+fi
 
 echo "== cs2slim 一键安装 (Linux) =="
 echo "模式: $MODE / 地图: $MAPS / 功能: ${FEATURES:-无} / 工作目录: $WORKDIR"
@@ -61,7 +68,12 @@ else
   if [ ! -f "$DD_DIR/DepotDownloader" ]; then
     echo "[1/5] 下载 DepotDownloader ..."
     mkdir -p "$DD_DIR"
-    curl -fL --retry 3 -C - --progress-bar -o "$DD_DIR/dd.zip" "$DD_URL"
+    if [ -n "$GH_PROXY" ]; then
+      echo "[1/5] 使用 GitHub 代理: $GH_PROXY"
+      curl -fL --retry 3 -C - --progress-bar -o "$DD_DIR/dd.zip" "$GH_PROXY/$DD_URL"
+    else
+      curl -fL --retry 3 -C - --progress-bar -o "$DD_DIR/dd.zip" "$DD_URL"
+    fi
     $PY - "$DD_DIR" <<'PY'
 import sys, zipfile, os
 d = sys.argv[1]

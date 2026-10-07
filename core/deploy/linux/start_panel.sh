@@ -40,8 +40,16 @@ if [ ! -x "$CS2_BIN" ]; then
   export CS2_MAPS="${CS2_MAPS:-de_dust2}"
   export CS2_FEATURES="${CS2_FEATURES:-}"
   export CS2_PANEL=1
+  # 一键脚本固定输出到 $CS2_WORKDIR/slim：把工作目录指向 CS2_SLIM_DIR 的父目录，
+  # 使安装产物直接落在自定义 CS2_SLIM_DIR（若自定义目录名不是 slim，安装后移动到目标位置）
+  export CS2_WORKDIR="$(dirname "$SLIM_DIR")"
   curl -fsSL --retry 3 \
     https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs2slim.sh | bash
+  # 若一键脚本输出路径（$CS2_WORKDIR/slim）与期望的 CS2_SLIM_DIR 不一致，移动到位
+  if [ -d "$CS2_WORKDIR/slim" ] && [ "$CS2_WORKDIR/slim" != "$SLIM_DIR" ]; then
+    echo "[cs2slim] 移动精简树 $CS2_WORKDIR/slim -> $SLIM_DIR"
+    mv "$CS2_WORKDIR/slim" "$SLIM_DIR"
+  fi
   # 安装成功会重新生成 start.sh（同款模板），重新执行以干净状态继续
   if [ -x "$CS2_BIN" ]; then
     exec bash "$HOME/start.sh"
@@ -183,8 +191,16 @@ case "${1:-}" in
   webstop|stop) stop_web; exit $? ;;
   auto|start)  MODE=auto ;;
   menu)        MODE=menu ;;
-  *)           if [ -t 0 ] && [ ! -f "$MENU_SEEN_FILE" ]; then MODE=menu; else MODE=auto; fi ;;
+  *)           if [ "${CS2LM_MENU:-}" = "1" ]; then MODE=menu
+               elif [ "${CS2LM_MENU:-}" = "0" ] || [ "${CS2LM_AUTO:-}" = "1" ]; then MODE=auto
+               elif [ -t 0 ] && [ ! -f "$MENU_SEEN_FILE" ]; then MODE=menu
+               else MODE=auto
+               fi ;;
 esac
+
+# CS2LM_MENU 环境变量可覆盖参数（对齐 Windows bat：=1 强制显示菜单，=0 强制跳过）
+if [ "${CS2LM_MENU:-}" = "1" ]; then MODE=menu; fi
+if [ "${CS2LM_MENU:-}" = "0" ]; then MODE=auto; fi
 
 # ---------- 分段式交互菜单（仅首次显示；之后可用 menu / CS2LM_MENU=1 再次打开） ----------
 if [ "$MODE" = "menu" ]; then
@@ -216,8 +232,12 @@ case "$CHOICE" in
 esac
 
 # 完整启动：CS2LM_WEB=1 时启动 Web（可选配置，默认不启动）
-if [ "$CHOICE" = "1" ] && [ "${CS2LM_WEB:-0}" = "1" ] && [ -x "$SLIM_DIR/cs2lm" ]; then
-  start_web
+if [ "$CHOICE" = "1" ] && [ "${CS2LM_WEB:-0}" = "1" ]; then
+  if [ -x "$SLIM_DIR/cs2lm" ]; then
+    start_web
+  else
+    echo "[cs2slim] WARN: 已设置 CS2LM_WEB=1，但未安装 link-manager（缺少 cs2lm），跳过 Web" >&2
+  fi
 fi
 
 # 菜单模式提示：接下来控制台将切换到 CS2 服务端日志
@@ -231,4 +251,6 @@ exec ./game/bin/linuxsteamrt64/cs2 \
   -dedicated +map de_dust2 +hostname "SlimTest" \
   -maxplayers 12 -ip 0.0.0.0 -port "$PORT" \
   -insecure -condebug +game_type 0 +game_mode 0 \
-  +sv_pure 0 +sv_cheats 1
+  +sv_pure 0 +sv_cheats 1 \
+  +sv_lan 1 +sv_maxrate 0 +sv_minrate 100000 \
+  +sv_maxupdaterate 128 +sv_maxcmdrate 128 +net_maxroutable 1200

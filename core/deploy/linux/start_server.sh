@@ -143,8 +143,16 @@ case "${1:-}" in
   webstop|stop) stop_web; exit $? ;;
   auto|start)  MODE=auto ;;
   menu)        MODE=menu ;;
-  *)           if [ -t 0 ] && [ ! -f "$MENU_SEEN_FILE" ]; then MODE=menu; else MODE=auto; fi ;;
+  *)           if [ "${CS2LM_MENU:-}" = "1" ]; then MODE=menu
+               elif [ "${CS2LM_MENU:-}" = "0" ] || [ "${CS2LM_AUTO:-}" = "1" ]; then MODE=auto
+               elif [ -t 0 ] && [ ! -f "$MENU_SEEN_FILE" ]; then MODE=menu
+               else MODE=auto
+               fi ;;
 esac
+
+# CS2LM_MENU 环境变量可覆盖参数（对齐 Windows bat：=1 强制显示菜单，=0 强制跳过）
+if [ "${CS2LM_MENU:-}" = "1" ]; then MODE=menu; fi
+if [ "${CS2LM_MENU:-}" = "0" ]; then MODE=auto; fi
 
 # ---------- 分段式交互菜单（仅首次显示；之后可用 menu / CS2LM_MENU=1 再次打开） ----------
 if [ "$MODE" = "menu" ]; then
@@ -176,8 +184,12 @@ case "$CHOICE" in
 esac
 
 # 完整启动：CS2LM_WEB=1 时启动 Web（可选配置，默认不启动）
-if [ "$CHOICE" = "1" ] && [ "${CS2LM_WEB:-0}" = "1" ] && [ -x "$(pwd)/cs2lm" ]; then
-  start_web
+if [ "$CHOICE" = "1" ] && [ "${CS2LM_WEB:-0}" = "1" ]; then
+  if [ -x "$(pwd)/cs2lm" ]; then
+    start_web
+  else
+    echo "[setup] WARN: 已设置 CS2LM_WEB=1，但未安装 link-manager（缺少 cs2lm），跳过 Web" >&2
+  fi
 fi
 
 # 菜单模式提示：接下来控制台将切换到 CS2 服务端日志
@@ -190,4 +202,6 @@ exec ./game/bin/linuxsteamrt64/cs2 \
   -dedicated +map de_dust2 +hostname "SlimTest" \
   -maxplayers 12 -ip 0.0.0.0 -port "$PORT" \
   -insecure -condebug +game_type 0 +game_mode 0 \
-  +sv_pure 0 +sv_cheats 1
+  +sv_pure 0 +sv_cheats 1 \
+  +sv_lan 1 +sv_maxrate 0 +sv_minrate 100000 \
+  +sv_maxupdaterate 128 +sv_maxcmdrate 128 +net_maxroutable 1200
