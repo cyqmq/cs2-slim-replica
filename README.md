@@ -53,6 +53,8 @@ irm https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs
 | `CS2_GH_PROXY` | GitHub 加速代理前缀（如 `https://ghproxy.com`） | (空) |
 | `CS2_PANEL` | 1=面板模式：生成/覆盖 `$HOME/start.sh` | 0 |
 
+> 📄 完整环境变量说明（含运行/启动变量：`SERVER_PORT`、`CS2_PORT`、`CS2LM_WEB`、`CS2LM_WEB_TOKEN` 等，含端口优先级与示例）见 **[`VARIABLES.md`](VARIABLES.md)**。
+
 ## 启动服务端
 
 ```bash
