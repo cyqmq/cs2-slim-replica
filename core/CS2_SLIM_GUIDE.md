@@ -663,3 +663,32 @@ irm https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs
 - Linux 用 `css` 功能（依赖 `metamod`），Windows 用 `css-win`（依赖 `metamod-win`）。
 - 启动日志中的 `Could not PreloadLibrary ... Access violation` 是非致命警告，不影响 CSS 运行。
 - 本包使用 with-runtime 版，宿主机无需预装 .NET。
+
+### 15.10 插件管理工具（cs2-link-manager / link-manager）
+
+[cs2-link-manager](https://github.com/cyqmq/cs2-link-manager)（`cs2lm`）是一个跨平台 CLI，用**符号链接**从中央仓库管理 CSS 插件：把插件文件保存在仓库，再链接进服务器，支持插件启停、profile 一键切换、反向导入（adopt）、`.cs2pkg` 打包和 Web UI。已作为选配功能 `link-manager` 发布（跨平台，需宿主机 **Python 3.11+**，不安装框架本身）：
+
+```bash
+# Linux: 和 CSS 一起装
+export CS2_MODE=prebuilt CS2_FEATURES=metamod,css,link-manager
+curl -fsSL https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs2slim.sh | bash
+
+# Windows
+$env:CS2_MODE = "prebuilt"; $env:CS2_FEATURES = "metamod-win,css-win,link-manager"
+irm https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs2slim.ps1 | iex
+```
+
+拼装后服务器根目录出现 `cs2lm`（Linux）/ `cs2lm.bat`（Windows）启动器和 `tools/cs2lm/` 源码目录。使用：
+
+```bash
+cd <服务器根目录>          # 含 game/ 的目录
+./cs2lm init --server . --repo plugins-repo
+./cs2lm add MyPlugin ./path/to/MyPlugin/
+./cs2lm install MyPlugin
+./cs2lm list
+./cs2lm doctor
+```
+
+**注意**：
+- 需要宿主机 Python 3.11+；Windows 建议以管理员/开发者模式运行以获得真实符号链接，否则自动回退 junction/复制。
+- 本功能不安装 Metamod/CSS 框架，请搭配 `metamod`/`css`（或 `metamod-win`/`css-win`）使用。

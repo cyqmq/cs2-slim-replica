@@ -1,6 +1,6 @@
 {
   "version": "2026-10-06",
-  "note": "功能组件。通常不需要额外 depot 文件（bots 是引擎内置 + 配置脚本）；css 依赖 metamod，css-win 依赖 metamod-win（requires 字段），拼装时会自动先装依赖。",
+  "note": "功能组件。通常不需要额外 depot 文件（bots 是引擎内置 + 配置脚本）；css 依赖 metamod，css-win 依赖 metamod-win（requires 字段），拼装时会自动先装依赖。link-manager 是跨平台管理工具（需宿主机 Python 3.11+），不安装框架本身。",
   "features": {
     "bots": {
       "required": false,
@@ -43,6 +43,14 @@
       "config_url": "https://raw.githubusercontent.com/cyqmq/cs2-slim-features/main/css-win/",
       "requires": ["metamod-win"],
       "prebuilt_url": "https://github.com/cyqmq/cs2-slim-features/releases/latest/download/css-pack-win.zip"
+    },
+    "link-manager": {
+      "required": false,
+      "name": "cs2-link-manager 插件管理工具（跨平台）",
+      "description": "用符号链接管理 CS2 CSS/Metamod 插件的 CLI 工具（cs2lm，需宿主机 Python 3.11+）。装到服务器根目录，提供 cs2lm / cs2lm.bat 命令；支持插件启停、profile 切换、反向导入、Web UI。",
+      "filelist": [],
+      "config_url": "https://raw.githubusercontent.com/cyqmq/cs2-slim-features/main/link-manager/",
+      "prebuilt_url": "https://github.com/cyqmq/cs2-slim-features/releases/latest/download/link-manager-pack.zip"
     },
     "gotv": {
       "required": false,
