@@ -692,3 +692,10 @@ cd <服务器根目录>          # 含 game/ 的目录
 **注意**：
 - 需要宿主机 Python 3.11+；Windows 建议以管理员/开发者模式运行以获得真实符号链接，否则自动回退 junction/复制。
 - 本功能不安装 Metamod/CSS 框架，请搭配 `metamod`/`css`（或 `metamod-win`/`css-win`）使用。
+
+**简幻欢单端口双服务**：简幻欢只分配一个端口（`SERVER_PORT`）。CS2 走 UDP，cs2lm 管理 Web 走 TCP——同一端口号两种协议互不冲突（已实测）。安装 `link-manager` 后，`start_panel.sh` 会自动在 `SERVER_PORT` 上启动 Web：
+
+- Token：优先用 `CS2LM_WEB_TOKEN` 环境变量；未设置则随机生成并写入服务器根目录 `web_token.txt`（权限 600）。
+- 访问：`http://<服务器IP>:<端口>/?token=<TOKEN>`。
+- PID 存 `web.pid`（重启自动清理旧进程），日志在 `web.log`，启动失败会在控制台警告。
+- 本地非面板场景需显式开启：`CS2LM_WEB=1 bash start_server.sh`。

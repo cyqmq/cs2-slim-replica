@@ -74,7 +74,49 @@ if [ -d game/csgo/bin/linuxsteamrt64 ]; then
   cd "$SLIM_DIR" || exit 1
 fi
 
-# ---------- 5. 启动服务端 ----------
+# ---------- 5. 插件管理 Web（可选，link-manager 功能；与 CS2 同端口 UDP/TCP 共存）----------
+if [ -x "$SLIM_DIR/cs2lm" ]; then
+  # 5.1 旧进程清理（面板重启时避免端口占用）
+  if [ -f "$SLIM_DIR/web.pid" ]; then
+    OLD_PID="$(cat "$SLIM_DIR/web.pid" 2>/dev/null || true)"
+    if [ -n "$OLD_PID" ] && kill -0 "$OLD_PID" 2>/dev/null; then
+      echo "[cs2slim] 停止旧的插件管理 Web (pid $OLD_PID)"
+      kill "$OLD_PID" 2>/dev/null || true
+      sleep 1
+    fi
+  fi
+
+  # 5.2 自动初始化插件仓库（幂等）
+  LM_REPO="$SLIM_DIR/plugins-repo"
+  if [ ! -f "$LM_REPO/config.json" ]; then
+    echo "[cs2slim] 初始化插件仓库: $LM_REPO"
+    "$SLIM_DIR/cs2lm" init --server "$SLIM_DIR" --repo "$LM_REPO" >/dev/null 2>&1 || \
+      echo "[cs2slim] WARN: cs2lm init 失败（web 不启动），详见 $SLIM_DIR/web.log" >&2
+  fi
+
+  # 5.3 Token：优先环境变量，否则随机生成并写入 web_token.txt
+  TOKEN="${CS2LM_WEB_TOKEN:-}"
+  if [ -z "$TOKEN" ]; then
+    TOKEN="$(openssl rand -hex 8 2>/dev/null || tr -dc 'a-f0-9' </dev/urandom | head -c16)"
+    echo "$TOKEN" > "$SLIM_DIR/web_token.txt"
+    chmod 600 "$SLIM_DIR/web_token.txt"
+  fi
+
+  # 5.4 启动 Web（TCP 端口与 CS2 UDP 端口相同，协议不同互不冲突）
+  PORT="${SERVER_PORT:-27015}"
+  echo "[cs2slim] 启动插件管理 Web (TCP $PORT): http://<IP>:$PORT/?token=$TOKEN"
+  nohup "$SLIM_DIR/cs2lm" web --host 0.0.0.0 --port "$PORT" --auth-token "$TOKEN" \
+    >> "$SLIM_DIR/web.log" 2>&1 &
+  echo $! > "$SLIM_DIR/web.pid"
+
+  # 5.5 启动失败可感知
+  sleep 1
+  if ! kill -0 "$(cat "$SLIM_DIR/web.pid" 2>/dev/null)" 2>/dev/null; then
+    echo "[cs2slim] WARNING: 插件管理 Web 启动失败，请查看 $SLIM_DIR/web.log" >&2
+  fi
+fi
+
+# ---------- 6. 启动服务端 ----------
 exec ./game/bin/linuxsteamrt64/cs2 \
   -dedicated +map de_dust2 +hostname "SlimTest" \
   -maxplayers 12 -ip 0.0.0.0 -port "${SERVER_PORT:-27015}" \
