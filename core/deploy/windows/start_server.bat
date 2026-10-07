@@ -1,7 +1,7 @@
 @echo off
 rem CS2 Windows slim server launcher (de_dust2, -insecure)
 rem Network params tuned for VPN/TUN links to avoid NETWORK_DISCONNECT_OVERFLOW.
-rem Port: uses SERVER_PORT env (Jianhuanhuan etc.) if set, otherwise 27015.
+rem Port precedence: SERVER_PORT (panel env) > CS2_PORT (user) > 27015 default.
 rem
 rem Optional plugin manager web (link-manager feature):
 rem   Enable with CS2LM_WEB=1. Requires cs2lm.bat in this directory.
@@ -13,6 +13,7 @@ setlocal enabledelayedexpansion
 cd /d "%~dp0"
 
 set "PORT=27015"
+if defined CS2_PORT set "PORT=%CS2_PORT%"
 if defined SERVER_PORT set "PORT=%SERVER_PORT%"
 
 rem ---------- Optional: plugin manager web (link-manager, CS2LM_WEB=1) ----------

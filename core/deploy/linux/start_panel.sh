@@ -11,6 +11,8 @@
 #   CS2_MAPS      选配地图，逗号分隔（默认 de_dust2）
 #   CS2_FEATURES  选配功能，逗号分隔（默认空）
 #   CS2_SLIM_DIR  精简树路径（默认 $HOME/cs2-slim-build/slim）
+#   CS2_PORT      指定端口（默认 27015；面板参数 SERVER_PORT 优先于它）
+#   SERVER_PORT   面板注入的端口（简幻欢等，优先级最高）
 
 SLIM_DIR="${CS2_SLIM_DIR:-$HOME/cs2-slim-build/slim}"
 CS2_BIN="$SLIM_DIR/game/bin/linuxsteamrt64/cs2"
@@ -34,6 +36,9 @@ if [ ! -x "$CS2_BIN" ]; then
 fi
 
 cd "$SLIM_DIR" || { echo "[cs2slim] 错误: 无法进入 $SLIM_DIR" >&2; exit 1; }
+
+# 端口：面板参数 SERVER_PORT 优先，其次用户变量 CS2_PORT，默认 27015
+PORT="${SERVER_PORT:-${CS2_PORT:-27015}}"
 
 # ---------- 2. 权限修复（面板默认只给 start.sh 执行权限） ----------
 chmod +x game/bin/linuxsteamrt64/cs2 2>/dev/null || true
@@ -103,7 +108,6 @@ if [ "${CS2LM_WEB:-0}" = "1" ] && [ -x "$SLIM_DIR/cs2lm" ]; then
   fi
 
   # 5.4 启动 Web（TCP 端口与 CS2 UDP 端口相同，协议不同互不冲突）
-  PORT="${SERVER_PORT:-27015}"
   echo "[cs2slim] 启动插件管理 Web (TCP $PORT): http://<IP>:$PORT/?token=$TOKEN"
   nohup "$SLIM_DIR/cs2lm" web --host 0.0.0.0 --port "$PORT" --auth-token "$TOKEN" \
     >> "$SLIM_DIR/web.log" 2>&1 &
@@ -119,6 +123,6 @@ fi
 # ---------- 6. 启动服务端 ----------
 exec ./game/bin/linuxsteamrt64/cs2 \
   -dedicated +map de_dust2 +hostname "SlimTest" \
-  -maxplayers 12 -ip 0.0.0.0 -port "${SERVER_PORT:-27015}" \
+  -maxplayers 12 -ip 0.0.0.0 -port "$PORT" \
   -insecure -condebug +game_type 0 +game_mode 0 \
   +sv_pure 0 +sv_cheats 1

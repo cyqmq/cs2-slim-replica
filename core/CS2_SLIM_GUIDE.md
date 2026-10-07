@@ -189,14 +189,15 @@ done
 ### 7.3 启动参数
 
 ```bash
+PORT="${SERVER_PORT:-${CS2_PORT:-27015}}"   # 面板 SERVER_PORT > 用户 CS2_PORT > 默认 27015
 ./game/bin/linuxsteamrt64/cs2 \
   -dedicated +map de_dust2 +hostname "SlimTest" \
-  -maxplayers 12 -ip 0.0.0.0 -port "${SERVER_PORT:-27015}" \
+  -maxplayers 12 -ip 0.0.0.0 -port "$PORT" \
   -insecure -condebug +game_type 0 +game_mode 0 \
   +sv_pure 0 +sv_cheats 1
 ```
 
-> 端口说明：普通环境默认 **27015**；简幻欢等面板会注入环境变量 `SERVER_PORT`（随机端口），脚本会自动使用它，无需手动改。
+> 端口优先级：**面板 `SERVER_PORT` > 用户变量 `CS2_PORT` > 默认 27015**。普通环境默认 **27015**；本地想换端口设置 `CS2_PORT=28000`；简幻欢等面板注入 `SERVER_PORT`（随机端口）会自动顶掉 `CS2_PORT`，无需手动改。
 
 - `-insecure`：禁用 VAC（服务端必须）
 - `sv_pure 0`：关闭客户端文件一致性校验（因为服务端已精简文件）
@@ -214,10 +215,10 @@ done
 ```
 [Server] SV:  12 player server started
 [Server] CSource2Server::GameServerSteamAPIActivated()
-UDP ${SERVER_PORT:-27015} 监听
+UDP ${SERVER_PORT:-${CS2_PORT:-27015}} 监听
 ```
 
-客户端：Steam 启动项加 `-insecure` → 控制台 `connect 服务器IP:${SERVER_PORT:-27015}`
+客户端：Steam 启动项加 `-insecure` → 控制台 `connect 服务器IP:${SERVER_PORT:-${CS2_PORT:-27015}}`
 
 ---
 
@@ -394,13 +395,16 @@ curl -L -o bins_win32.zip \
 ```bat
 @echo off
 cd /d "%~dp0"
+set "PORT=27015"
+if defined CS2_PORT set "PORT=%CS2_PORT%"       :: 用户变量
+if defined SERVER_PORT set "PORT=%SERVER_PORT%"   :: 面板参数优先
 game\bin\win64\cs2.exe -dedicated +map de_dust2 +hostname "SlimTest" \
-  -maxplayers 12 -ip 0.0.0.0 -port %SERVER_PORT% \
+  -maxplayers 12 -ip 0.0.0.0 -port %PORT% \
   -insecure -condebug +game_type 0 +game_mode 0 \
   +sv_pure 0 +sv_cheats 1
 ```
 
-> 端口说明：`start_server.bat` 会自动读取 `SERVER_PORT`（面板环境变量），未设置时回退 27015。
+> 端口优先级：**`SERVER_PORT`（面板环境变量）> `CS2_PORT`（用户设置）> 默认 27015**。`start_server.bat` 会自动按此顺序取值；本地想换端口先 `set CS2_PORT=28000`。
 
 验证标准（与第八节相同）：
 

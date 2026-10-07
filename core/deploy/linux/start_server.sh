@@ -5,6 +5,9 @@
 #   2) V8 库符号链接 (game/csgo/bin/linuxsteamrt64 -> game/bin/linuxsteamrt64)
 cd "$(dirname "$0")"
 
+# 端口：面板参数 SERVER_PORT 优先，其次用户变量 CS2_PORT，默认 27015
+PORT="${SERVER_PORT:-${CS2_PORT:-27015}}"
+
 # 0) 修复执行权限（面板/部署环境可能未保留 +x）
 chmod +x game/bin/linuxsteamrt64/cs2 2>/dev/null || true
 
@@ -59,7 +62,6 @@ if [ "${CS2LM_WEB:-0}" = "1" ] && [ -x "$(pwd)/cs2lm" ]; then
     echo "$TOKEN" > "$SLIM_DIR/web_token.txt"
     chmod 600 "$SLIM_DIR/web_token.txt"
   fi
-  PORT="${SERVER_PORT:-27015}"
   echo "[setup] 启动插件管理 Web (TCP $PORT): http://<IP>:$PORT/?token=$TOKEN"
   nohup "$SLIM_DIR/cs2lm" web --host 0.0.0.0 --port "$PORT" --auth-token "$TOKEN" \
     >> "$SLIM_DIR/web.log" 2>&1 &
@@ -73,6 +75,6 @@ fi
 
 exec ./game/bin/linuxsteamrt64/cs2 \
   -dedicated +map de_dust2 +hostname "SlimTest" \
-  -maxplayers 12 -ip 0.0.0.0 -port "${SERVER_PORT:-27015}" \
+  -maxplayers 12 -ip 0.0.0.0 -port "$PORT" \
   -insecure -condebug +game_type 0 +game_mode 0 \
   +sv_pure 0 +sv_cheats 1
