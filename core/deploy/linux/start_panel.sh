@@ -74,8 +74,8 @@ if [ -d game/csgo/bin/linuxsteamrt64 ]; then
   cd "$SLIM_DIR" || exit 1
 fi
 
-# ---------- 5. 插件管理 Web（可选，link-manager 功能；与 CS2 同端口 UDP/TCP 共存）----------
-if [ -x "$SLIM_DIR/cs2lm" ]; then
+# ---------- 5. 插件管理 Web（可选配置：CS2LM_WEB=1 且已装 link-manager；与 CS2 同端口 UDP/TCP 共存）----------
+if [ "${CS2LM_WEB:-0}" = "1" ] && [ -x "$SLIM_DIR/cs2lm" ]; then
   # 5.1 旧进程清理（面板重启时避免端口占用）
   if [ -f "$SLIM_DIR/web.pid" ]; then
     OLD_PID="$(cat "$SLIM_DIR/web.pid" 2>/dev/null || true)"

@@ -693,9 +693,10 @@ cd <服务器根目录>          # 含 game/ 的目录
 - 需要宿主机 Python 3.11+；Windows 建议以管理员/开发者模式运行以获得真实符号链接，否则自动回退 junction/复制。
 - 本功能不安装 Metamod/CSS 框架，请搭配 `metamod`/`css`（或 `metamod-win`/`css-win`）使用。
 
-**简幻欢单端口双服务**：简幻欢只分配一个端口（`SERVER_PORT`）。CS2 走 UDP，cs2lm 管理 Web 走 TCP——同一端口号两种协议互不冲突（已实测）。安装 `link-manager` 后，`start_panel.sh` 会自动在 `SERVER_PORT` 上启动 Web：
+**简幻欢单端口双服务（可选配置）**：简幻欢只分配一个端口（`SERVER_PORT`）。CS2 走 UDP，cs2lm 管理 Web 走 TCP——同一端口号两种协议互不冲突（已实测）。这是**可选配置**：默认不启动 Web；设置环境变量 `CS2LM_WEB=1` 且已安装 `link-manager` 时，启动脚本（Linux 面板 `start_panel.sh` / Linux 本地 `start_server.sh` / Windows `start_server.bat`）会在 `SERVER_PORT` 上启动 Web：
 
 - Token：优先用 `CS2LM_WEB_TOKEN` 环境变量；未设置则随机生成并写入服务器根目录 `web_token.txt`（权限 600）。
 - 访问：`http://<服务器IP>:<端口>/?token=<TOKEN>`。
-- PID 存 `web.pid`（重启自动清理旧进程），日志在 `web.log`，启动失败会在控制台警告。
-- 本地非面板场景需显式开启：`CS2LM_WEB=1 bash start_server.sh`。
+- PID 存 `web.pid`（重启自动清理旧进程），日志在 `web.log`（Windows 另存 `web.err.log`），启动失败会在控制台警告。
+- Linux：面板 `CS2LM_WEB=1 bash start_panel.sh`；本地 `CS2LM_WEB=1 bash start_server.sh`。
+- Windows：在面板环境变量中配置 `CS2LM_WEB=1`，`start_server.bat` 即自动启用（需 `cs2lm.bat` 位于服务器根目录）。
