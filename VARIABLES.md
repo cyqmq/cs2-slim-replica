@@ -15,9 +15,9 @@
 | `CS2_FEATURES` | 空 | 逗号分隔的选配功能列表，如 `metamod,css,link-manager` |
 | `CS2_WORKDIR` | `$HOME/cs2-slim-build` | 工作目录（下载、解压、拼装都在这里） |
 | `CS2_PACKAGE` | `0` | `1` = 完成后打包 tar.gz |
-| `CS2_DRY_RUN` | `0` | `1` = 只生成配置不下载（预览效果） |
+| `CS2_DRY_RUN` | `0` | `1` = 只生成配置不下载（预览效果）。**不会生成 / 覆盖 `start.sh`** |
 | `CS2_GH_PROXY` | 空 | GitHub 加速代理前缀（如 `https://ghproxy.com`），用于仓库 / Release 下载 |
-| `CS2_PANEL` | `0` | `1` = 面板模式（简幻欢 / Pterodactyl 等）：完成后在 `$HOME` 生成 `start.sh` |
+| `CS2_PANEL` | `0` | `1` = 面板模式（简幻欢 / Pterodactyl 等）：完成后在 `$HOME` 生成 `start.sh`（需去掉 `CS2_DRY_RUN`） |
 
 **示例**（prebuilt 一键安装 + 地图 + 功能）：
 

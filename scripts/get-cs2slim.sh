@@ -15,6 +15,9 @@
 #   CS2_GH_PROXY  GitHub 加速代理前缀(如 https://ghproxy.com), 用于仓库/Release 下载
 #   CS2_PANEL     1=面板模式(简幻欢/Pterodactyl等): 完成后在 $HOME 生成 start.sh, 默认 0
 #
+# 注意: CS2_DRY_RUN=1 只做预览（生成配置、打印将执行的命令），不会下载/组装，
+#       也不会生成或覆盖 start.sh。面板模式需要 start.sh 时请去掉 dry-run 再执行。
+#
 # 重要: 使用 curl | bash 时，请先用 export 设置变量！
 #   错误: CS2_MODE=prebuilt ... curl ... | bash   (变量只传给 curl，bash 收不到)
 #   正确: export CS2_MODE=prebuilt CS2_MAPS=...; curl ... | bash
