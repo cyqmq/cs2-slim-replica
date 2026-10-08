@@ -1,6 +1,6 @@
 {
-  "version": "2026-10-06",
-  "note": "功能组件。通常不需要额外 depot 文件（bots 是引擎内置 + 配置脚本）；css 依赖 metamod，css-win 依赖 metamod-win（requires 字段），拼装时会自动先装依赖。link-manager 是跨平台管理工具（需宿主机 Python 3.11+），不安装框架本身。",
+  "version": "2026-10-09",
+  "note": "功能组件。通常不需要额外 depot 文件（bots 是引擎内置 + 配置脚本）；css 依赖 metamod，css-win 依赖 metamod-win，plugify 依赖 metamod，plugify-win 依赖 metamod-win（requires 字段），拼装时会自动先装依赖。swiftly/modsharp 为独立框架，拼装时自动补 gameinfo.gi；modsharp 需服务端预装 .NET 10。link-manager 是跨平台管理工具（需宿主机 Python 3.11+），不安装框架本身。",
   "features": {
     "bots": {
       "required": false,
@@ -51,6 +51,56 @@
       "filelist": [],
       "config_url": "https://raw.githubusercontent.com/cyqmq/cs2-slim-features/main/link-manager/",
       "prebuilt_url": "https://github.com/cyqmq/cs2-slim-features/releases/latest/download/link-manager-pack.zip"
+    },
+    "swiftly": {
+      "required": false,
+      "name": "SwiftlyS2 插件框架（Linux）",
+      "description": "CS2 C++/C# 插件框架 Linux 版（linuxsteamrt64，带 .NET 运行时）。独立框架，不依赖 Metamod，拼装时自动补 gameinfo.gi（Game csgo/addons/swiftlys2）。插件放入 addons/swiftlys2/plugins/。",
+      "filelist": [],
+      "config_url": "https://raw.githubusercontent.com/cyqmq/cs2-slim-features/main/swiftly/",
+      "prebuilt_url": "https://github.com/cyqmq/cs2-slim-features/releases/latest/download/swiftly-pack.zip"
+    },
+    "swiftly-win": {
+      "required": false,
+      "name": "SwiftlyS2 插件框架（Windows）",
+      "description": "CS2 C++/C# 插件框架 Windows 版（win64，带 .NET 运行时）。独立框架，不依赖 Metamod，拼装时自动补 gameinfo.gi（Game csgo/addons/swiftlys2）。插件放入 addons/swiftlys2/plugins/。",
+      "filelist": [],
+      "config_url": "https://raw.githubusercontent.com/cyqmq/cs2-slim-features/main/swiftly-win/",
+      "prebuilt_url": "https://github.com/cyqmq/cs2-slim-features/releases/latest/download/swiftly-pack-win.zip"
+    },
+    "plugify": {
+      "required": false,
+      "name": "Plugify 插件框架（Linux）",
+      "description": "多语言插件系统 Linux 版（linuxsteamrt64，Metamod 加载器）。依赖 metamod，安装后通过 plugify 包管理器安装语言模块与插件。",
+      "filelist": [],
+      "config_url": "https://raw.githubusercontent.com/cyqmq/cs2-slim-features/main/plugify/",
+      "requires": ["metamod"],
+      "prebuilt_url": "https://github.com/cyqmq/cs2-slim-features/releases/latest/download/plugify-pack.zip"
+    },
+    "plugify-win": {
+      "required": false,
+      "name": "Plugify 插件框架（Windows）",
+      "description": "多语言插件系统 Windows 版（win64，Metamod 加载器）。依赖 metamod-win，安装后通过 plugify 包管理器安装语言模块与插件。",
+      "filelist": [],
+      "config_url": "https://raw.githubusercontent.com/cyqmq/cs2-slim-features/main/plugify-win/",
+      "requires": ["metamod-win"],
+      "prebuilt_url": "https://github.com/cyqmq/cs2-slim-features/releases/latest/download/plugify-pack-win.zip"
+    },
+    "modsharp": {
+      "required": false,
+      "name": "ModSharp C# 插件框架（Linux）",
+      "description": "CS2 C# 插件框架 Linux 版（game/sharp 结构，需服务端预装 .NET 10）。独立框架，不依赖 Metamod，拼装时自动补 gameinfo.gi（Game sharp）。",
+      "filelist": [],
+      "config_url": "https://raw.githubusercontent.com/cyqmq/cs2-slim-features/main/modsharp/",
+      "prebuilt_url": "https://github.com/cyqmq/cs2-slim-features/releases/latest/download/modsharp-pack.zip"
+    },
+    "modsharp-win": {
+      "required": false,
+      "name": "ModSharp C# 插件框架（Windows）",
+      "description": "CS2 C# 插件框架 Windows 版（game/sharp 结构，需服务端预装 .NET 10 与 VC++ 运行库）。独立框架，不依赖 Metamod，拼装时自动补 gameinfo.gi（Game sharp）。",
+      "filelist": [],
+      "config_url": "https://raw.githubusercontent.com/cyqmq/cs2-slim-features/main/modsharp-win/",
+      "prebuilt_url": "https://github.com/cyqmq/cs2-slim-features/releases/latest/download/modsharp-pack-win.zip"
     },
     "gotv": {
       "required": false,

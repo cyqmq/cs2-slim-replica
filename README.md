@@ -77,7 +77,7 @@ bash ~/start.sh
 |------|------|
 | [cs2-slim-replica](https://github.com/cyqmq/cs2-slim-replica)（本仓库） | 主仓库：配方 + 一键脚本 + CLI |
 | [cs2-slim-maps](https://github.com/cyqmq/cs2-slim-maps) | 选配地图（de_mirage / de_inferno / …） |
-| [cs2-slim-features](https://github.com/cyqmq/cs2-slim-features) | 选配功能（bots 人机等） |
+| [cs2-slim-features](https://github.com/cyqmq/cs2-slim-features) | 选配功能（bots 人机 / Metamod / CounterStrikeSharp / Swiftly / Plugify / ModSharp 等） |
 
 ## 更多文档
 

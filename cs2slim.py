@@ -316,20 +316,30 @@ def _update_start_scripts(platform, tree):
         print(f"  WARN: 更新启动脚本失败: {e}")
 
 
-def _patch_gameinfo_for_metamod(tree):
-    """在 game/csgo/gameinfo.gi 的 SearchPaths 中加入 Game csgo/addons/metamod。
+def _patch_gameinfo_for_addon(tree, addon, label="Addon"):
+    """在 game/csgo/gameinfo.gi 的 SearchPaths 中加入 Game <addon>。
 
-    Metamod:Source 通过该搜索路径让引擎优先加载
-    addons/metamod/bin/linuxsteamrt64/libserver.so 作为 GameDLL，从而注入插件框架。
+    用于需要引擎优先加载自定义 GameDLL 的独立框架：
+      - Metamod:Source  -> csgo/addons/metamod
+      - SwiftlyS2        -> csgo/addons/swiftlys2
+      - ModSharp        -> sharp
     """
     gi = os.path.join(tree, "game", "csgo", "gameinfo.gi")
     if not os.path.exists(gi):
-        print(f"  WARN: 未找到 {gi}，无法自动打 Metamod 补丁")
+        print(f"  WARN: 未找到 {gi}，无法自动打 {label} 补丁")
         return
+
+    def _line_has_addon(ln):
+        stripped = ln.lstrip()
+        if not stripped.startswith("Game"):
+            return False
+        rest = stripped[4:].lstrip().split("//")[0].strip()
+        return rest == addon
+
     with open(gi, encoding="utf-8", errors="replace") as f:
         lines = f.readlines()
-    if any("csgo/addons/metamod" in ln for ln in lines):
-        print("  Metamod: gameinfo.gi 已包含 csgo/addons/metamod，跳过补丁")
+    if any(_line_has_addon(ln) for ln in lines):
+        print(f"  {label}: gameinfo.gi 已包含 {addon}，跳过补丁")
         return
     new_lines = []
     inserted = False
@@ -338,14 +348,14 @@ def _patch_gameinfo_for_metamod(tree):
         stripped = ln.lstrip()
         if stripped.startswith("Game_LowViolence"):
             indent = ln[: len(ln) - len(stripped)]
-            new_lines.append(f'{indent}Game\tcsgo/addons/metamod\n')
+            new_lines.append(f"{indent}Game\t{addon}\n")
             inserted = True
     if not inserted:
-        print("  WARN: gameinfo.gi 中未找到 Game_LowViolence 行，请手动添加 Game csgo/addons/metamod")
+        print(f"  WARN: gameinfo.gi 中未找到 Game_LowViolence 行，请手动添加 Game {addon}")
         return
     with open(gi, "w", encoding="utf-8", newline="") as f:
         f.writelines(new_lines)
-    print("  Metamod: 已在 gameinfo.gi 中添加 Game csgo/addons/metamod")
+    print(f"  {label}: 已在 gameinfo.gi 中添加 Game {addon}")
 
 
 def _expand_feature_deps(features, reg_feat):
@@ -620,9 +630,13 @@ def cmd_prebuilt(args, cfg):
             download_file(url, fzip, f"功能 {f}")
         print(f"  拼装功能 {f} ...")
         extract_archive(fzip, tree)
-    # 功能后置补丁（如 Metamod 需要修改 gameinfo.gi）
+    # 功能后置补丁（独立框架需要修改 gameinfo.gi 加载自定义 GameDLL）
     if any(f in ("metamod", "metamod-win") for f in features):
-        _patch_gameinfo_for_metamod(tree)
+        _patch_gameinfo_for_addon(tree, "csgo/addons/metamod", "Metamod")
+    if any(f in ("swiftly", "swiftly-win") for f in features):
+        _patch_gameinfo_for_addon(tree, "csgo/addons/swiftlys2", "SwiftlyS2")
+    if any(f in ("modsharp", "modsharp-win") for f in features):
+        _patch_gameinfo_for_addon(tree, "sharp", "ModSharp")
 
     # 5. 报告
     print()

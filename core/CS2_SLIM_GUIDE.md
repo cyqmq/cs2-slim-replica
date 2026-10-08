@@ -670,7 +670,82 @@ irm https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs
 - 启动日志中的 `Could not PreloadLibrary ... Access violation` 是非致命警告，不影响 CSS 运行。
 - 本包使用 with-runtime 版，宿主机无需预装 .NET。
 
-### 15.10 插件管理工具（cs2-link-manager / link-manager）
+### 15.10 SwiftlyS2 插件框架
+
+精简服支持加载 **SwiftlyS2**——一个基于 C++、支持 C# 插件的 CS2 脚本框架。已作为功能组件发布：**Linux 版 `swiftly`**（linuxsteamrt64）和 **Windows 版 `swiftly-win`**（win64），均带 .NET 运行时：
+
+```bash
+# Linux
+export CS2_MODE=prebuilt CS2_FEATURES=swiftly
+curl -fsSL https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs2slim.sh | bash
+```
+
+```powershell
+# Windows
+$env:CS2_MODE = "prebuilt"; $env:CS2_FEATURES = "swiftly-win"
+irm https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs2slim.ps1 | iex
+```
+
+拼装时自动完成：
+
+1. 解压 `swiftly-pack.zip`（SwiftlyS2 v1.4.13，linuxsteamrt64/win64）到 `game/csgo/addons/swiftlys2/` 结构
+2. 自动在 `game/csgo/gameinfo.gi` 的 SearchPaths 中加入 `Game csgo/addons/swiftlys2`（幂等，重复执行不会重复添加）
+
+**特点**：独立框架，**不依赖 Metamod**（与 CSS 不同）；自带 .NET 运行时（with-runtimes 包）。
+
+**验证**：启动后控制台输入 `sw`。把你的 Swiftly 插件发布产物放入 `game/csgo/addons/swiftlys2/plugins/<PluginId>/`，重启服务端即可加载。
+
+### 15.11 Plugify 插件框架
+
+**Plugify** 是一个多语言插件系统（支持 C++、C#、Python、Lua、JS 等），以 **Metamod 插件**形式运行。已作为功能组件发布：**Linux 版 `plugify`**（linuxsteamrt64，依赖 `metamod`）和 **Windows 版 `plugify-win`**（win64，依赖 `metamod-win`）：
+
+```bash
+# Linux
+export CS2_MODE=prebuilt CS2_FEATURES=metamod,plugify
+curl -fsSL https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs2slim.sh | bash
+```
+
+```powershell
+# Windows
+$env:CS2_MODE = "prebuilt"; $env:CS2_FEATURES = "metamod-win,plugify-win"
+irm https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs2slim.ps1 | iex
+```
+
+拼装时自动完成：
+
+1. 先安装依赖（Metamod:Source，自动补 `gameinfo.gi`）
+2. 解压 Plugify 功能包到 `game/csgo/addons/`，注册文件 `addons/metamod/plugify.vdf`
+
+**注意**：本包是 Plugify **最小加载器**（`libplugify` + `micromamba` 包管理器），不含语言模块。要运行插件，需先用 Plugify 包管理器安装对应语言模块与 s2sdk（详见 [plugify 官方文档](https://plugify.net/use-cases/metamod-plugin/installation/)）。
+
+**验证**：启动后控制台输入 `meta list`，应看到 Plugify 已加载。
+
+### 15.12 ModSharp C# 插件框架
+
+**ModSharp** 是一个现代化的 C# 插件框架（已服务超 400 万玩家）。已作为功能组件发布：**Linux 版 `modsharp`** 和 **Windows 版 `modsharp-win`**，均为独立框架（不依赖 Metamod）：
+
+```bash
+# Linux
+export CS2_MODE=prebuilt CS2_FEATURES=modsharp
+curl -fsSL https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs2slim.sh | bash
+```
+
+```powershell
+# Windows
+$env:CS2_MODE = "prebuilt"; $env:CS2_FEATURES = "modsharp-win"
+irm https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs2slim.ps1 | iex
+```
+
+拼装时自动完成：
+
+1. 解压 `modsharp-pack.zip`（git-180）到 `game/sharp/` 结构
+2. 自动在 `game/csgo/gameinfo.gi` 的 SearchPaths 中加入 `Game sharp`（幂等，重复执行不会重复添加）
+
+**注意**：包内**不自带 .NET 运行时**，需服务端预装 **.NET 10**（Windows 另需 Visual C++ Redistributable）。
+
+**验证**：启动后控制台输入 `ms`。把你的 ModSharp 模块放入 `game/sharp/modules/`，重启服务端即可加载。
+
+### 15.13 插件管理工具（cs2-link-manager / link-manager）
 
 [cs2-link-manager](https://github.com/cyqmq/cs2-link-manager)（`cs2lm`）是一个跨平台 CLI，用**符号链接**从中央仓库管理 CSS 插件：把插件文件保存在仓库，再链接进服务器，支持插件启停、profile 一键切换、反向导入（adopt）、`.cs2pkg` 打包和 Web UI。已作为选配功能 `link-manager` 发布（跨平台，需宿主机 **Python 3.11+**，不安装框架本身）：
 
