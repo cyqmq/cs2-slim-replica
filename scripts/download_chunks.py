@@ -20,6 +20,7 @@ Steam CDN 1MB Range 分块下载器
 """
 import argparse
 import os
+import shutil
 import sys
 import time
 import urllib.request
@@ -45,14 +46,28 @@ def download_chunks(url: str, total: int, outpath: str, chunk: int = 1_000_000, 
                     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0",
                 })
                 with urllib.request.urlopen(req, timeout=90) as r:
+                    status = r.status
                     data = r.read()
-                if len(data) == expected:
+                if status == 200:
+                    # 服务器忽略 Range，返回完整内容：校验总大小后直接收尾
+                    if len(data) == total:
+                        print(f"server ignored Range, got full {len(data)} bytes", flush=True)
+                        if os.path.exists(outpath):
+                            os.remove(outpath)
+                        with open(outpath, "wb") as f:
+                            f.write(data)
+                        shutil.rmtree(parts_dir, ignore_errors=True)
+                        print(f"Done. Size: {os.path.getsize(outpath)}", flush=True)
+                        return
+                    print(f"full200 {start}-{end} got {len(data)} != total {total}, attempt {attempt}", flush=True)
+                elif len(data) == expected:
                     with open(part, "wb") as f:
                         f.write(data)
                     print(f"ok {start}-{end}", flush=True)
                     ok = True
                     break
-                print(f"short {start}-{end} got {len(data)}, attempt {attempt}", flush=True)
+                else:
+                    print(f"short {start}-{end} got {len(data)}, attempt {attempt}", flush=True)
             except Exception as e:
                 print(f"err {start}-{end} attempt {attempt}: {e}", flush=True)
             time.sleep(1)

@@ -96,7 +96,7 @@ def assemble_linux(extra_maps=None):
 def _write_linux_scripts():
     setup_sh = r"""#!/bin/bash
 # CS2 精简服务端 一次性部署脚本 (在 Linux 上执行一次)
-# 1) 放置 steamclient.so 到 /root/.steam/sdk64/
+# 1) 放置 steamclient.so 到 $HOME/.steam/sdk64/
 # 2) 创建 V8 库符号链接 (game/csgo/bin/linuxsteamrt64 -> game/bin/linuxsteamrt64)
 # 3) 设置可执行权限
 set -e
@@ -104,9 +104,9 @@ cd "$(dirname "$0")"
 
 echo "[1/3] steamclient.so ..."
 if [ -f steamclient.so ]; then
-  mkdir -p /root/.steam/sdk64
-  ln -sf "$(readlink -f steamclient.so)" /root/.steam/sdk64/steamclient.so
-  echo "  OK -> /root/.steam/sdk64/steamclient.so"
+  mkdir -p "$HOME/.steam/sdk64"
+  ln -sf "$(readlink -f steamclient.so)" "$HOME/.steam/sdk64/steamclient.so"
+  echo "  OK -> $HOME/.steam/sdk64/steamclient.so"
 else
   echo "  WARN: steamclient.so 不存在于本目录，跳过 (服务端可能无法连接 Steam 网络)"
 fi
@@ -156,7 +156,7 @@ exec ./game/bin/linuxsteamrt64/cs2 \
   ./start_server.sh
 
 setup.sh 会:
-  1. 将 steamclient.so 链接到 /root/.steam/sdk64/steamclient.so
+  1. 将 steamclient.so 链接到 $HOME/.steam/sdk64/steamclient.so
   2. 在 game/csgo/bin/linuxsteamrt64 下为 V8 库创建相对符号链接
   3. 设置可执行权限
 

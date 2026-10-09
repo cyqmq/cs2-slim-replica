@@ -58,31 +58,66 @@ BIN_DIR = {
 # ---------------------------------------------------------------------------
 # 极简 YAML 子集解析（满足 slim.yaml 需求，零依赖）
 # ---------------------------------------------------------------------------
+def _strip_inline_comment(line):
+    """去掉行尾 YAML 注释（` # ...`），引号内的 # 保留。"""
+    in_single = in_double = False
+    for i, ch in enumerate(line):
+        if ch == "'" and not in_double:
+            in_single = not in_single
+        elif ch == '"' and not in_single:
+            in_double = not in_double
+        elif ch == "#" and not in_single and not in_double:
+            # 注释需以空白或行首开头（避免误伤 hostname: "my#tag" 这类）
+            if i == 0 or line[i - 1] in " \t":
+                return line[:i].rstrip()
+    return line.rstrip()
+
+
 def parse_yaml_simple(text):
-    """解析极简 YAML：顶层 `key: value`、`key:` + 缩进 `- item`、内联 `[a, b]`。"""
+    """解析极简 YAML：顶层 `key: value`、`key:` + 缩进 `- item`、内联 `[a, b]`、
+    以及段内嵌套 `key: value`（如 server 配置段）。支持行尾 ` # 注释`。"""
     data = {}
-    list_key = None
+    section_key = None
     for raw in text.splitlines():
-        line = raw.rstrip()
-        if not line.strip() or line.strip().startswith("#"):
+        line = _strip_inline_comment(raw)
+        if not line.strip():
             continue
         indent = len(line) - len(line.lstrip(" "))
         content = line.strip()
+        if content.startswith("#"):
+            continue
         if indent == 0 and ":" in content and not content.startswith("- "):
             key, _, val = content.partition(":")
             key = key.strip()
             val = val.strip()
-            list_key = None
+            section_key = None
             if val == "":
                 data[key] = []
-                list_key = key
+                section_key = key
             elif val.startswith("[") and val.endswith("]"):
                 data[key] = [v.strip().strip("'\"") for v in val[1:-1].split(",") if v.strip()]
+            elif val.startswith("{") and val.endswith("}"):
+                d = {}
+                for part in val[1:-1].split(","):
+                    if ":" in part:
+                        k, _, v = part.partition(":")
+                        d[k.strip().strip("'\"")] = v.strip().strip("'\"")
+                data[key] = d
             else:
                 data[key] = val.strip("'\"")
         elif indent > 0 and content.startswith("- "):
-            if list_key is not None:
-                data[list_key].append(content[2:].strip().strip("'\""))
+            if section_key is not None and isinstance(data.get(section_key), list):
+                data[section_key].append(content[2:].strip().strip("'\""))
+        elif indent > 0 and ":" in content and not content.startswith("- "):
+            # 段内嵌套键值对（如 server 下的 hostname/maxplayers/port）
+            if section_key is not None:
+                k, _, v = content.partition(":")
+                k = k.strip()
+                v = v.strip()
+                if isinstance(data.get(section_key), list) and not data[section_key]:
+                    data[section_key] = {}
+                if isinstance(data.get(section_key), dict):
+                    data[section_key][k] = v.strip("'\"")
     return data
 
 
@@ -135,7 +170,8 @@ def build_combined_filelist(core_filelist, cfg, registry_base=None):
     with open(core_filelist, encoding="utf-8") as f:
         lines = [ln.rstrip("\n") for ln in f]
 
-    added = set()
+    # 核心行也纳入去重集合，避免地图/功能片段重复追加核心已含文件（如 de_dust2.vpk）
+    added = set(lines)
     reg_maps = load_registry("maps.json", registry_base)
     for m in resolve_maps(cfg):
         meta = reg_maps.get("maps", {}).get(m)
@@ -225,15 +261,39 @@ def download_file(url, dest, desc=""):
         sys.exit(f"下载失败 {url}: {e} (已保留 {tmp}，下次运行可断点续传)")
 
 
+def _safe_join(dest, name):
+    """防 zip-slip / path traversal：确保解压目标在 dest 内。"""
+    dest_real = os.path.realpath(dest)
+    target = os.path.realpath(os.path.join(dest_real, name))
+    if target != dest_real and not target.startswith(dest_real + os.sep):
+        raise ValueError(f"非法解压路径: {name}")
+    return target
+
+
 def extract_archive(path, dest):
-    """解压 zip / tar.gz 到 dest。"""
+    """解压 zip / tar.gz 到 dest（带 zip-slip 防护）。"""
     os.makedirs(dest, exist_ok=True)
     if path.endswith(".zip"):
         with zipfile.ZipFile(path) as z:
+            for info in z.infolist():
+                _safe_join(dest, info.filename)
             z.extractall(dest)
     else:
         with tarfile.open(path, "r:gz") as t:
+            for m in t.getmembers():
+                _safe_join(dest, m.name)
             t.extractall(dest)
+
+
+def _make_zip(tree, out):
+    """用 Python zipfile 生成标准 ZIP（Linux 无 bsdtar zip 支持时的可靠方案）。"""
+    print(f"打包 {os.path.basename(tree)} -> {os.path.basename(out)} ...")
+    with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED, allowZip64=True) as z:
+        for root, _, files in os.walk(tree):
+            for fn in files:
+                fp = os.path.join(root, fn)
+                arc = os.path.relpath(fp, tree).replace(os.sep, "/")
+                z.write(fp, arc)
 
 
 STEAM_MANIFEST_URL = "https://client-update.akamai.steamstatic.com/steam_client_ubuntu12"
@@ -359,17 +419,21 @@ def _patch_gameinfo_for_addon(tree, addon, label="Addon"):
 
 
 def _expand_feature_deps(features, reg_feat):
-    """递归展开功能依赖（如 css-win -> metamod-win），保持原有顺序。"""
-    expanded = list(features)
-    seen = set(expanded)
-    i = 0
-    while i < len(expanded):
-        meta = reg_feat.get("features", {}).get(expanded[i])
+    """递归展开功能依赖（如 css -> metamod,metamod），依赖前置。"""
+    expanded = []
+    seen = set()
+
+    def add(f):
+        if f in seen:
+            return
+        seen.add(f)
+        meta = reg_feat.get("features", {}).get(f)
         for dep in (meta or {}).get("requires") or []:
-            if dep not in seen:
-                seen.add(dep)
-                expanded.append(dep)
-        i += 1
+            add(dep)
+        expanded.append(f)
+
+    for f in features:
+        add(f)
     return expanded
 
 
@@ -382,8 +446,29 @@ def cmd_init(args, cfg):
     if not dst.endswith((".yaml", ".yml", ".json")):
         dst = os.path.join(dst, "slim.yaml")
     os.makedirs(os.path.dirname(dst) or ".", exist_ok=True)
-    shutil.copy2(src, dst)
-    print(f"配置模板已生成: {dst}")
+    if dst.lower().endswith(".json"):
+        # 输出真正的 JSON 模板（load_config 对 .json 走 json.loads）
+        template = {
+            "platform": "win64",
+            "maps": ["de_dust2"],
+            "features": [],
+            "workdir": "./cs2-build",
+            "server": {
+                "hostname": "SlimTest",
+                "maxplayers": 12,
+                "port": 27015,
+                "insecure": True,
+                "sv_pure": 0,
+                "sv_cheats": 1,
+            },
+        }
+        with open(dst, "w", encoding="utf-8") as f:
+            json.dump(template, f, ensure_ascii=False, indent=2)
+            f.write("\n")
+        print(f"配置模板已生成: {dst}")
+    else:
+        shutil.copy2(src, dst)
+        print(f"配置模板已生成: {dst}")
     print("编辑后运行: python cs2slim.py download --config <path>")
 
 
@@ -425,9 +510,10 @@ def cmd_download(args, cfg):
                 sys.exit(f"DepotDownloader 失败 (exit {r.returncode})")
         print("下载完成。下一步: python cs2slim.py extract --config <path>")
     else:
+        tool_name = "DepotDownloader" if platform == "linux" else "DepotDownloader.exe"
         print("未提供 depot_tool，请手动执行以下命令（或编辑 slim.yaml 设置 depot_tool）:")
         for depot, filelist in jobs:
-            cmd = ["DepotDownloader.exe", "-app", "730", "-depot", depot,
+            cmd = [tool_name, "-app", "730", "-depot", depot,
                    "-dir", os.path.join(workdir, "depot", depot),
                    "-filelist", filelist]
             print("  " + " ".join(cmd))
@@ -456,6 +542,17 @@ def cmd_build(args, cfg):
     platform = cfg.get("platform") or "win64"
     maps = resolve_maps(cfg)
     extra = [m for m in maps if m != "de_dust2"]
+
+    # 前置检查：depot 缺失时给出友好提示，而不是 Python traceback
+    depot_shared = os.path.join(workdir, "depot", "2347770")
+    depot_bin = os.path.join(workdir, "depot", PLATFORM_DEPOT[platform][0])
+    missing = [d for d in (depot_shared, depot_bin) if not os.path.isdir(d)]
+    if missing:
+        sys.exit(
+            "缺少 depot 目录:\n  " + "\n  ".join(missing)
+            + "\n请先运行: python cs2slim.py download --config <path>"
+        )
+
     print(f"组装平台 {platform}，地图: {maps}，额外: {extra or '无'}")
     r = subprocess.run([sys.executable, os.path.join(SCRIPTS_DIR, "rebuild_slim.py"),
                      "--base-dir", workdir,
@@ -463,6 +560,9 @@ def cmd_build(args, cfg):
                      "--platforms", platform])
     if r.returncode != 0:
         sys.exit("组装失败")
+    # source 模式生成的启动脚本是旧版，用主仓库最新脚本覆盖（含菜单/端口/link-manager 支持）
+    tree = os.path.join(workdir, "slim-win" if platform == "win64" else "slim")
+    _update_start_scripts(platform, tree)
     print("组装完成。下一步: python cs2slim.py package --config <path> 或 run 启动")
 
 
@@ -472,23 +572,30 @@ def cmd_package(args, cfg):
     tree = os.path.join(workdir, "slim-win" if platform == "win64" else "slim")
     if not os.path.exists(tree):
         sys.exit(f"精简树不存在: {tree}，请先 build")
+    # 完整性检查：核心二进制存在才允许打包（避免打包空/残缺树）
+    bin_rel = BIN_DIR[platform]
+    if not os.path.exists(os.path.join(tree, bin_rel)):
+        sys.exit(f"精简树不完整（缺少 {bin_rel}），请重新 build")
+
     fmt = args.format
     ext = "zip" if fmt == "zip" else "tar.gz"
     out = os.path.join(workdir, f"cs2-slim-{platform}.{ext}")
     if os.path.exists(out):
         os.remove(out)
     if fmt == "zip":
-        cmd = ["tar", "-a", "-c", "-f", out, "-C", tree, "."]
+        # 用 Python zipfile 生成标准 ZIP（Linux 的 GNU tar -a 对 .zip 会产出无效文件）
+        _make_zip(tree, out)
+        print(f"打包完成: {out} ({os.path.getsize(out)/1024/1024/1024:.2f} GB)")
+        return
+    # Linux tar.gz 需保留 shell 脚本可执行位。
+    # Windows 自带 bsdtar 会把 .sh 记成 666（丢失执行位），部署后 ./setup.sh 会 Permission denied；
+    # 因此优先用 Git Bash GNU tar（记录 MSYS chmod 的 755），Linux 上直接使用系统 GNU tar。
+    git_bash = r"C:\Program Files\Git\bin\bash.exe"
+    if os.path.exists(git_bash):
+        # Git Bash 的 tar 会把 `C:/...` 当作远程主机，必须用相对路径（subprocess 已设 cwd=workdir）
+        cmd = [git_bash, "-c", f"tar -czf '{os.path.basename(out)}' -C '{os.path.basename(tree)}' ."]
     else:
-        # Linux tar.gz 需保留 shell 脚本可执行位。
-        # Windows 自带 bsdtar 会把 .sh 记成 666（丢失执行位），部署后 ./setup.sh 会 Permission denied；
-        # 因此优先用 Git Bash GNU tar（记录 MSYS chmod 的 755），Linux 上直接使用系统 GNU tar。
-        git_bash = r"C:\Program Files\Git\bin\bash.exe"
-        if os.path.exists(git_bash):
-            # Git Bash 的 tar 会把 `C:/...` 当作远程主机，必须用相对路径（subprocess 已设 cwd=workdir）
-            cmd = [git_bash, "-c", f"tar -czf '{os.path.basename(out)}' -C '{os.path.basename(tree)}' ."]
-        else:
-            cmd = ["tar", "-czf", out, "-C", tree, "."]
+        cmd = ["tar", "-czf", out, "-C", tree, "."]
     print(">>", " ".join(cmd))
     r = subprocess.run(cmd, cwd=workdir)
     if r.returncode != 0:
@@ -499,15 +606,22 @@ def cmd_package(args, cfg):
 def cmd_run(args, cfg):
     platform = cfg.get("platform") or "win64"
     workdir = os.path.abspath(cfg.get("workdir") or "./cs2-build")
-    exe = os.path.join(workdir, BIN_DIR[platform])
+    # build 实际输出在 <workdir>/slim 或 <workdir>/slim-win 下
+    tree = os.path.join(workdir, "slim-win" if platform == "win64" else "slim")
+    exe = os.path.join(tree, BIN_DIR[platform])
     if not os.path.exists(exe):
         sys.exit(f"可执行文件不存在: {exe}，请先 build")
     srv = cfg.get("server") or {}
+    # 端口优先级与启动脚本一致: SERVER_PORT > CS2_PORT > 配置 > 27015
+    port = (os.environ.get("SERVER_PORT")
+            or os.environ.get("CS2_PORT")
+            or srv.get("port")
+            or 27015)
     params = [
         exe, "-dedicated", "+map", args.map,
         "+hostname", srv.get("hostname") or "SlimTest",
         "-maxplayers", str(srv.get("maxplayers") or 12),
-        "-ip", "0.0.0.0", "-port", str(os.environ.get("SERVER_PORT") or srv.get("port") or 27015),
+        "-ip", "0.0.0.0", "-port", str(port),
         "-insecure", "-condebug", "+game_type", "0", "+game_mode", "0",
         "+sv_pure", str(srv.get("sv_pure") or 0),
         "+sv_cheats", str(srv.get("sv_cheats") or 1),
@@ -574,12 +688,21 @@ def cmd_prebuilt(args, cfg):
         for m in resolve_maps(cfg):
             if m == "de_dust2":
                 continue
-            url = (reg_maps.get("maps", {}).get(m) or {}).get("prebuilt_url") or ""
-            print(f"  地图 {m}: {url or '（无预构建包，跳过）'}")
+            meta = reg_maps.get("maps", {}).get(m)
+            if meta is None:
+                print(f"  WARN: 未知地图组件 {m}，跳过")
+                continue
+            url = meta.get("prebuilt_url") or ""
+            print(f"  地图 {m}: {url or '（暂无预构建包）'}")
         reg_feat = load_registry("features.json", cfg.get("registry_base"))
-        for f in parse_csv(cfg.get("features") or []):
-            url = (reg_feat.get("features", {}).get(f) or {}).get("prebuilt_url") or ""
-            print(f"  功能 {f}: {url or '（无预构建包，跳过）'}")
+        features = _expand_feature_deps(parse_csv(cfg.get("features") or []), reg_feat)
+        for f in features:
+            meta = reg_feat.get("features", {}).get(f)
+            if meta is None:
+                print(f"  WARN: 未知功能组件 {f}，跳过")
+                continue
+            url = meta.get("prebuilt_url") or ""
+            print(f"  功能 {f}: {url or '（暂无预构建包）'}")
         return
 
     # 1. 核心包
@@ -613,7 +736,10 @@ def cmd_prebuilt(args, cfg):
         if m == "de_dust2":
             continue
         meta = reg_maps.get("maps", {}).get(m)
-        url = (meta or {}).get("prebuilt_url") or ""
+        if meta is None:
+            print(f"  WARN: 未知地图组件 {m}，跳过")
+            continue
+        url = meta.get("prebuilt_url") or ""
         if not url:
             print(f"  WARN: 地图 {m} 暂无预构建包（可用 source 模式: cs2slim.py all），跳过")
             continue
@@ -629,7 +755,10 @@ def cmd_prebuilt(args, cfg):
     features = _expand_feature_deps(features, reg_feat)
     for f in features:
         meta = reg_feat.get("features", {}).get(f)
-        url = (meta or {}).get("prebuilt_url") or ""
+        if meta is None:
+            print(f"  WARN: 未知功能组件 {f}，跳过")
+            continue
+        url = meta.get("prebuilt_url") or ""
         if not url:
             print(f"  WARN: 功能 {f} 暂无预构建包，跳过")
             continue

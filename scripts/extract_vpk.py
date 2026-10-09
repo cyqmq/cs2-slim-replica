@@ -224,7 +224,7 @@ def main():
 
     print(f"解析 VPK: {args.dir_vpk}")
     info = parse_vpk_tree(buf)
-    print(f"VPK 版本: {info['version']}, 目录树大小: {info['tree_size']:.1f} MB, "
+    print(f"VPK 版本: {info['version']}, 目录树大小: {info['tree_size']/1024/1024:.1f} MB, "
           f"条目数: {len(info['entries'])}")
 
     archives_dir = args.archives_dir or os.path.dirname(args.dir_vpk)

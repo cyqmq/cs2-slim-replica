@@ -16,7 +16,7 @@
 #   CS2_PANEL     1=面板模式(简幻欢/Pterodactyl等): 完成后在 $HOME 生成 start.sh, 默认 0
 #
 # 注意: CS2_DRY_RUN=1 只做预览（生成配置、打印将执行的命令），不会下载/组装，
-#       也不会生成或覆盖 start.sh。面板模式需要 start.sh 时请去掉 dry-run 再执行。
+#       也不会执行构建。面板模式（CS2_PANEL=1）下 dry-run 仍会生成/预览 $HOME/start.sh。
 #
 # 重要: 使用 curl | bash 时，请先用 export 设置变量！
 #   错误: CS2_MODE=prebuilt ... curl ... | bash   (变量只传给 curl，bash 收不到)
@@ -58,6 +58,39 @@ command -v python3 >/dev/null 2>&1 && PY="python3"
 if [ -z "$PY" ]; then command -v python >/dev/null 2>&1 && PY="python"; fi
 if [ -z "$PY" ]; then echo "错误: 需要 python3 或 python"; exit 1; fi
 command -v curl  >/dev/null 2>&1 || { echo "错误: 需要 curl"; exit 1; }
+
+# --- 面板部署函数（完整执行与 dry-run 预览共用） ---
+deploy_panel_script() {
+  local template="$REPO_DIR/core/deploy/linux/start_panel.sh"
+  if [ ! -f "$template" ]; then
+    echo "  本地仓库缺少 start_panel.sh，从 GitHub 获取 ..."
+    curl -fL --retry 3 -o "$WORKDIR/start_panel.sh" \
+      "https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/core/deploy/linux/start_panel.sh"
+    template="$WORKDIR/start_panel.sh"
+  fi
+  if [ -f "$HOME/start.sh" ]; then
+    echo "  检测到已有 $HOME/start.sh，覆盖为最新模板"
+  fi
+  cp "$template" "$HOME/start.sh"
+  # 清理 BOM / CRLF（部分面板环境会引入），并设置执行权限
+  "$PY" - "$HOME/start.sh" <<'PY'
+import sys
+p = sys.argv[1]
+with open(p, "rb") as f:
+    data = f.read()
+if data.startswith(b"\xef\xbb\xbf"):
+    data = data[3:]
+data = data.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+with open(p, "wb") as f:
+    f.write(data)
+PY
+  chmod +x "$HOME/start.sh"
+  # 面板默认只给 start.sh 执行权限，这里顺便补上 cs2 二进制的执行权限
+  chmod +x "$WORKDIR/slim/game/bin/linuxsteamrt64/cs2" 2>/dev/null || true
+  chmod +x "$WORKDIR/slim/start_server.sh" 2>/dev/null || true
+  echo "  已生成 $HOME/start.sh（含自动安装+启动逻辑）"
+  echo "  请把面板启动命令设为:  bash start.sh"
+}
 
 mkdir -p "$WORKDIR/tools"
 
@@ -189,6 +222,10 @@ if [ "$DRY_RUN" = "1" ]; then
   else
     echo "将执行: $PY $REPO_DIR/cs2slim.py all --config $CFG $PACKAGE_FLAG"
   fi
+  if [ "$PANEL" = "1" ]; then
+    echo "  (dry-run) 面板模式: 生成 $HOME/start.sh 预览 ..."
+    deploy_panel_script
+  fi
   exit 0
 fi
 if [ "$MODE" = "prebuilt" ]; then
@@ -202,35 +239,7 @@ fi
 # --- 6. 面板模式: 生成/覆盖 $HOME/start.sh (简幻欢/Pterodactyl 等面板需要) ---
 if [ "$PANEL" = "1" ]; then
   echo "[6] 面板模式: 部署启动脚本 ..."
-  PANEL_TEMPLATE="$REPO_DIR/core/deploy/linux/start_panel.sh"
-  if [ ! -f "$PANEL_TEMPLATE" ]; then
-    echo "  本地仓库缺少 start_panel.sh，从 GitHub 获取 ..."
-    curl -fL --retry 3 -o "$WORKDIR/start_panel.sh" \
-      "https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/core/deploy/linux/start_panel.sh"
-    PANEL_TEMPLATE="$WORKDIR/start_panel.sh"
-  fi
-  if [ -f "$HOME/start.sh" ]; then
-    echo "  检测到已有 $HOME/start.sh，覆盖为最新模板"
-  fi
-  cp "$PANEL_TEMPLATE" "$HOME/start.sh"
-  # 清理 BOM / CRLF（部分面板环境会引入），并设置执行权限
-  $PY - "$HOME/start.sh" <<'PY'
-import sys
-p = sys.argv[1]
-with open(p, "rb") as f:
-    data = f.read()
-if data.startswith(b"\xef\xbb\xbf"):
-    data = data[3:]
-data = data.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
-with open(p, "wb") as f:
-    f.write(data)
-PY
-  chmod +x "$HOME/start.sh"
-  # 面板默认只给 start.sh 执行权限，这里顺便补上 cs2 二进制的执行权限
-  chmod +x "$WORKDIR/slim/game/bin/linuxsteamrt64/cs2" 2>/dev/null || true
-  chmod +x "$WORKDIR/slim/start_server.sh" 2>/dev/null || true
-  echo "  已生成 $HOME/start.sh（含自动安装+启动逻辑）"
-  echo "  请把面板启动命令设为:  bash start.sh"
+  deploy_panel_script
 fi
 
 echo
