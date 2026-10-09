@@ -72,8 +72,36 @@ MENU_SEEN_FILE="$SLIM_DIR/.cs2slim_menu_seen"
 
 # ---------- 插件管理 Web 段（link-manager 功能；与 CS2 同端口 UDP/TCP 共存） ----------
 start_web() {
+  # 兼容旧版功能包：若仅解压了 tools/cs2lm（缺少根目录启动器）或启动器缺执行权限，自动修复
   if [ ! -x "$SLIM_DIR/cs2lm" ]; then
-    echo "[cs2slim] 错误: 未找到 $SLIM_DIR/cs2lm，请先安装 link-manager 功能包" >&2
+    if [ -f "$SLIM_DIR/cs2lm" ]; then
+      echo "[cs2slim] 修复 cs2lm 启动器执行权限"
+      chmod +x "$SLIM_DIR/cs2lm"
+    elif [ -d "$SLIM_DIR/tools/cs2lm" ]; then
+      echo "[cs2slim] 检测到 tools/cs2lm 但缺少 cs2lm 启动器，自动补生成"
+      cat > "$SLIM_DIR/cs2lm" <<'CS2LM_LAUNCHER'
+#!/usr/bin/env bash
+set -euo pipefail
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PY=""
+for c in python3 python; do
+  if command -v "$c" >/dev/null 2>&1; then
+    PY="$c"
+    break
+  fi
+done
+if [ -z "$PY" ]; then
+  echo "cs2lm: 未找到 python3/python（需要 Python 3.11+）" >&2
+  exit 1
+fi
+export PYTHONPATH="$DIR/tools/cs2lm/src${PYTHONPATH:+:$PYTHONPATH}"
+exec "$PY" -m cs2lm "$@"
+CS2LM_LAUNCHER
+      chmod +x "$SLIM_DIR/cs2lm"
+    fi
+  fi
+  if [ ! -x "$SLIM_DIR/cs2lm" ]; then
+    echo "[cs2slim] 错误: 未找到 $SLIM_DIR/cs2lm 且无 tools/cs2lm 源码，请先安装 link-manager 功能包（CS2_FEATURES=link-manager 重跑安装脚本）" >&2
     return 1
   fi
   # 旧进程清理（面板重启时避免端口占用）

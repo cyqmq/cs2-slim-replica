@@ -271,13 +271,24 @@ def _safe_join(dest, name):
 
 
 def extract_archive(path, dest):
-    """解压 zip / tar.gz 到 dest（带 zip-slip 防护）。"""
+    """解压 zip / tar.gz 到 dest（带 zip-slip 防护，并保留 zip 记录的 Unix 权限位）。"""
     os.makedirs(dest, exist_ok=True)
     if path.endswith(".zip"):
         with zipfile.ZipFile(path) as z:
             for info in z.infolist():
                 _safe_join(dest, info.filename)
             z.extractall(dest)
+            # Python zipfile 默认不保留 Unix 权限位，这里手动应用（如脚本执行位）
+            for info in z.infolist():
+                mode = (info.external_attr >> 16) & 0xFFFF
+                if not mode:
+                    continue
+                target = os.path.join(dest, info.filename)
+                if os.path.exists(target):
+                    try:
+                        os.chmod(target, mode)
+                    except OSError:
+                        pass
     else:
         with tarfile.open(path, "r:gz") as t:
             for m in t.getmembers():
@@ -804,6 +815,11 @@ def cmd_prebuilt(args, cfg):
             download_file(url, fzip, f"功能 {f}")
         print(f"  拼装功能 {f} ...")
         extract_archive(fzip, tree)
+    # link-manager 启动器兜底：确保 cs2lm 可执行（旧 zip/部分解压工具会丢失执行位）
+    if platform == "linux" and any(f in ("link-manager",) for f in features):
+        lm_launcher = os.path.join(tree, "cs2lm")
+        if os.path.exists(lm_launcher):
+            os.chmod(lm_launcher, 0o755)
     # 功能后置补丁（独立框架需要修改 gameinfo.gi 加载自定义 GameDLL）
     if any(f in ("metamod", "metamod-win") for f in features):
         _patch_gameinfo_for_addon(tree, "csgo/addons/metamod", "Metamod")
