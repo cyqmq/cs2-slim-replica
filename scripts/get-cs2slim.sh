@@ -15,7 +15,7 @@
 #   CS2_GH_PROXY  GitHub 加速代理前缀(如 https://ghproxy.com), 用于仓库/Release 下载
 #   CS2_PANEL     1=面板模式(简幻欢/Pterodactyl等): 完成后在 $HOME 生成 start.sh, 默认 0
 #   CS2_NET_MODE  生成的服务端启动网络模式(在 start_server.sh/start.sh 中读取):
-#                 1=局域网 | 2=局域网+绑定0.0.0.0(默认) | 3=公开(需 GSLT)
+#                 1=局域网 | 2=互联网/外网直连(默认, +sv_lan 0 -ip 0.0.0.0) | 3=公开(需 GSLT)
 #                 档3 GSLT 来源优先 CS2_GSLT > GSLT > CS2LM_GSLT；无 GSLT 回退档2。
 #                 警告: 本精简服务端非认证/可能违规，公开绑定 GSLT 可能导致该 Steam 账号被 GSLT 服务封禁。
 #

@@ -3,7 +3,7 @@ rem CS2 Windows slim server launcher (de_dust2, -insecure)
 rem Network params tuned for VPN/TUN links to avoid NETWORK_DISCONNECT_OVERFLOW.
 rem Port precedence: SERVER_PORT (panel env) > CS2_PORT (user) > 27015 default.
 rem
-rem Network mode CS2_NET_MODE: 1(lan) | 2(lan+bind 0.0.0.0, default) | 3(public, requires GSLT)
+rem Network mode CS2_NET_MODE: 1(lan) | 2(internet, default) | 3(public, requires GSLT)
 rem   GSLT precedence CS2_GSLT > GSLT > CS2LM_GSLT; mode 3 falls back to 2 without GSLT.
 rem   WARNING: this slim build is unauthenticated / may violate ToS; binding a GSLT
 rem   publicly can get that Steam account's GSLT service banned.
@@ -98,9 +98,9 @@ if "%CHOICE%"=="1" (
 )
 
 rem ---------- network mode ----------
-rem CS2_NET_MODE: 1(lan) | 2(lan+bind 0.0.0.0, default) | 3(public, requires GSLT)
+rem CS2_NET_MODE: 1(lan) | 2(internet, default) | 3(public, requires GSLT)
 rem  1 = LAN only            +sv_lan 1 (no -ip)
-rem  2 = LAN + bind all NICs  +sv_lan 1 -ip 0.0.0.0 (default, current behavior)
+rem  2 = internet/direct      +sv_lan 0 -ip 0.0.0.0 (default; reachable from WAN, not in public list)
 rem  3 = public              +sv_lan 0 + GSLT (+sv_setsteamaccount)
 rem       WARNING: this slim build is unauthenticated / may violate ToS; binding a
 rem       GSLT publicly can get that Steam account's GSLT service banned.
@@ -120,14 +120,18 @@ if "%NET_MODE%"=="3" (
   if not defined NET_ARGS if defined CS2LM_GSLT set "NET_ARGS=+sv_setsteamaccount %CS2LM_GSLT%"
   if not defined NET_ARGS (
     echo [cs2slim] WARN: CS2_NET_MODE=3 but no GSLT (CS2_GSLT/GSLT/CS2LM_GSLT), falling back to mode 2
-    set "SV_LAN=1"
+    set "SV_LAN=0"
     set "BIND_IP=-ip 0.0.0.0"
   )
 )
-if "%NET_MODE%"=="2" set "BIND_IP=-ip 0.0.0.0"
+if "%NET_MODE%"=="2" (
+  set "SV_LAN=0"
+  set "BIND_IP=-ip 0.0.0.0"
+)
 if "%NET_MODE%" neq "1" if "%NET_MODE%" neq "2" if "%NET_MODE%" neq "3" (
   echo [cs2slim] WARN: unknown CS2_NET_MODE=%NET_MODE%, falling back to mode 2
   set "NET_MODE=2"
+  set "SV_LAN=0"
   set "BIND_IP=-ip 0.0.0.0"
 )
 

@@ -21,7 +21,7 @@ cd "$(dirname "$0")"
 # 端口：面板参数 SERVER_PORT 优先，其次用户变量 CS2_PORT，默认 27015
 PORT="${SERVER_PORT:-${CS2_PORT:-27015}}"
 
-# 网络模式：CS2_NET_MODE = 1(局域网) | 2(局域网+绑定0.0.0.0, 默认) | 3(公开, 需 GSLT)
+# 网络模式：CS2_NET_MODE = 1(局域网) | 2(互联网/外网直连, 默认) | 3(公开, 需 GSLT)
 # GSLT 来源优先 CS2_GSLT > GSLT > CS2LM_GSLT；档3无 GSLT 时回退档2。
 # 警告: 本精简服务端非认证/可能违规，公开绑定 GSLT 可能导致该 Steam 账号被 GSLT 服务封禁。
 
@@ -203,10 +203,10 @@ if [ "$MODE" = "menu" ]; then
 fi
 
 # ---------- 网络模式 ----------
-# CS2_NET_MODE: 1(局域网) | 2(局域网+绑定0.0.0.0, 默认) | 3(公开, 需 GSLT)
+# CS2_NET_MODE: 1(局域网) | 2(互联网, 默认) | 3(公开, 需 GSLT)
 #  1 = 局域网可见           +sv_lan 1（不绑 -ip）
-#  2 = 局域网+绑定所有网卡   +sv_lan 1 -ip 0.0.0.0（默认，= 现状）
-#  3 = 正常公开             +sv_lan 0 + 绑定 GSLT（+sv_setsteamaccount）
+#  2 = 互联网/外网直连       +sv_lan 0 -ip 0.0.0.0（默认；可外网连接，不进公网列表）
+#  3 = 公开列表             +sv_lan 0 + 绑定 GSLT（+sv_setsteamaccount）
 #       警告: 本精简服务端为非认证/可能涉及违规场景，公开绑定 GSLT 可能导致
 #       该 Steam 账号被 GSLT 服务封禁，请自行评估风险。无 GSLT 时退回档2。
 # GSLT 来源优先: CS2_GSLT > GSLT > CS2LM_GSLT
@@ -219,9 +219,9 @@ case "$NET_MODE" in
        NET_ARGS="+sv_setsteamaccount $GSLT"
      else
        echo "[setup] WARN: CS2_NET_MODE=3 但未提供 GSLT（CS2_GSLT/GSLT/CS2LM_GSLT），回退档2" >&2
-       SV_LAN=1; BIND_IP="-ip 0.0.0.0"
+       SV_LAN=0; BIND_IP="-ip 0.0.0.0"
      fi ;;
-  2|*) SV_LAN=1; BIND_IP="-ip 0.0.0.0"; NET_ARGS=""
+  2|*) SV_LAN=0; BIND_IP="-ip 0.0.0.0"; NET_ARGS=""
        [ "$NET_MODE" != "2" ] && \
          echo "[setup] WARN: 未知 CS2_NET_MODE='$NET_MODE'，回退档2" >&2 ;;
 esac

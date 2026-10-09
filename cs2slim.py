@@ -630,8 +630,8 @@ def cmd_run(args, cfg):
         "+net_maxroutable", "1200",
     ]
     # ---------- 网络模式 ----------
-    # CS2_NET_MODE: 1(局域网) | 2(局域网+绑定0.0.0.0, 默认) | 3(公开, 需 GSLT)
-    #  1 = +sv_lan 1（不绑 -ip）；2 = +sv_lan 1 -ip 0.0.0.0；
+    # CS2_NET_MODE: 1(局域网) | 2(互联网, 默认) | 3(公开, 需 GSLT)
+    #  1 = +sv_lan 1（不绑 -ip）；2 = +sv_lan 0 -ip 0.0.0.0（外网直连，不进公网列表）；
     #  3 = +sv_lan 0 + GSLT(+sv_setsteamaccount)，无 GSLT 回退档2。
     #      警告: 本精简服务端非认证/可能违规，公开绑定 GSLT 可能导致该账号被 GSLT 服务封禁。
     # GSLT 来源优先: CS2_GSLT > GSLT > CS2LM_GSLT
@@ -646,11 +646,11 @@ def cmd_run(args, cfg):
             sv_lan, bind_ip, net_args = 0, [], ["+sv_setsteamaccount", gslt]
         else:
             print(">> WARN: CS2_NET_MODE=3 无 GSLT（CS2_GSLT/GSLT/CS2LM_GSLT），回退档2")
-            sv_lan, bind_ip, net_args = 1, ["-ip", "0.0.0.0"], []
+            sv_lan, bind_ip, net_args = 0, ["-ip", "0.0.0.0"], []
     else:
         if net_mode != "2":
             print(f">> WARN: 未知 CS2_NET_MODE='{net_mode}'，回退档2")
-        sv_lan, bind_ip, net_args = 1, ["-ip", "0.0.0.0"], []
+        sv_lan, bind_ip, net_args = 0, ["-ip", "0.0.0.0"], []
     # -ip 插到 -port 前；+sv_lan 插到 +sv_maxrate 前；net_args 追加末尾
     if bind_ip:
         pi = params.index("-port")
