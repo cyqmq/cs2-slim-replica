@@ -658,10 +658,11 @@ def cmd_run(args, cfg):
     params[params.index("+sv_maxrate") : params.index("+sv_maxrate")] = ["+sv_lan", str(sv_lan)]
     params += net_args
     print(">>", " ".join(params))
-    print(f"服务端启动中 (工作目录 {workdir})。日志: game/csgo/console.log")
+    print(f"服务端启动中 (工作目录 {tree})。日志: game/csgo/console.log")
     if platform == "win64":
-        subprocess.run(params, cwd=workdir)
+        subprocess.run(params, cwd=tree)
     else:
+        os.chdir(tree)
         os.execv(exe, params)
 
 

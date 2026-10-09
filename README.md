@@ -49,9 +49,9 @@ irm https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs
 | `CS2_FEATURES` | 逗号分隔功能（如 `bots`） | (空) |
 | `CS2_WORKDIR` | 工作目录 | `~/cs2-slim-build` |
 | `CS2_PACKAGE` | 1=完成后打包（仅 source 模式） | 0 |
-| `CS2_DRY_RUN` | 1=只生成配置不下载（预览） | 0 |
+| `CS2_DRY_RUN` | 1=只生成配置不下载（预览；`CS2_PANEL=1` 时会生成 `start.sh` 预览） | 0 |
 | `CS2_GH_PROXY` | GitHub 加速代理前缀（如 `https://ghproxy.com`） | (空) |
-| `CS2_PANEL` | 1=面板模式：生成/覆盖 `$HOME/start.sh` | 0 |
+| `CS2_PANEL` | 1=面板模式：生成/覆盖 `$HOME/start.sh`（dry-run 也生成预览） | 0 |
 
 > 📄 完整环境变量说明（含运行/启动变量：`SERVER_PORT`、`CS2_PORT`、`CS2LM_WEB`、`CS2LM_WEB_TOKEN` 等，含端口优先级与示例）见 **[`VARIABLES.md`](VARIABLES.md)**。
 
