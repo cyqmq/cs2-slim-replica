@@ -621,14 +621,42 @@ def cmd_run(args, cfg):
         exe, "-dedicated", "+map", args.map,
         "+hostname", srv.get("hostname") or "SlimTest",
         "-maxplayers", str(srv.get("maxplayers") or 12),
-        "-ip", "0.0.0.0", "-port", str(port),
+        "-port", str(port),
         "-insecure", "-condebug", "+game_type", "0", "+game_mode", "0",
         "+sv_pure", str(srv.get("sv_pure") or 0),
         "+sv_cheats", str(srv.get("sv_cheats") or 1),
-        "+sv_lan", "1", "+sv_maxrate", "0", "+sv_minrate", "100000",
+        "+sv_maxrate", "0", "+sv_minrate", "100000",
         "+sv_maxupdaterate", "128", "+sv_maxcmdrate", "128",
         "+net_maxroutable", "1200",
     ]
+    # ---------- 网络模式 ----------
+    # CS2_NET_MODE: 1(局域网) | 2(局域网+绑定0.0.0.0, 默认) | 3(公开, 需 GSLT)
+    #  1 = +sv_lan 1（不绑 -ip）；2 = +sv_lan 1 -ip 0.0.0.0；
+    #  3 = +sv_lan 0 + GSLT(+sv_setsteamaccount)，无 GSLT 回退档2。
+    #      警告: 本精简服务端非认证/可能违规，公开绑定 GSLT 可能导致该账号被 GSLT 服务封禁。
+    # GSLT 来源优先: CS2_GSLT > GSLT > CS2LM_GSLT
+    net_mode = os.environ.get("CS2_NET_MODE", "2")
+    if net_mode == "1":
+        sv_lan, bind_ip, net_args = 1, [], []
+    elif net_mode == "3":
+        gslt = (os.environ.get("CS2_GSLT")
+                or os.environ.get("GSLT")
+                or os.environ.get("CS2LM_GSLT"))
+        if gslt:
+            sv_lan, bind_ip, net_args = 0, [], ["+sv_setsteamaccount", gslt]
+        else:
+            print(">> WARN: CS2_NET_MODE=3 无 GSLT（CS2_GSLT/GSLT/CS2LM_GSLT），回退档2")
+            sv_lan, bind_ip, net_args = 1, ["-ip", "0.0.0.0"], []
+    else:
+        if net_mode != "2":
+            print(f">> WARN: 未知 CS2_NET_MODE='{net_mode}'，回退档2")
+        sv_lan, bind_ip, net_args = 1, ["-ip", "0.0.0.0"], []
+    # -ip 插到 -port 前；+sv_lan 插到 +sv_maxrate 前；net_args 追加末尾
+    if bind_ip:
+        pi = params.index("-port")
+        params[pi:pi] = bind_ip
+    params[params.index("+sv_maxrate") : params.index("+sv_maxrate")] = ["+sv_lan", str(sv_lan)]
+    params += net_args
     print(">>", " ".join(params))
     print(f"服务端启动中 (工作目录 {workdir})。日志: game/csgo/console.log")
     if platform == "win64":

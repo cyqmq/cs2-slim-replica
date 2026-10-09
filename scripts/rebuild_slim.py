@@ -135,11 +135,26 @@ echo "部署完成。运行: ./start_server.sh"
 # CS2 精简专用服务端 启动脚本 (de_dust2, -insecure)
 # 网络参数针对 VPN/TUN 链路优化, 避免 NETWORK_DISCONNECT_OVERFLOW
 cd "$(dirname "$0")"
+# ---------- 网络模式 ----------
+# CS2_NET_MODE: 1(局域网) | 2(局域网+绑定0.0.0.0, 默认) | 3(公开, 需 GSLT)
+#  3 = +sv_lan 0 + GSLT(+sv_setsteamaccount); 无 GSLT 时回退档2。
+#      警告: 本精简服务端非认证/可能违规，公开绑定 GSLT 可能导致该账号被 GSLT 服务封禁。
+# GSLT 来源优先: CS2_GSLT > GSLT > CS2LM_GSLT
+NET_MODE="${CS2_NET_MODE:-2}"
+case "$NET_MODE" in
+  1) SV_LAN=1; BIND_IP=""  ; NET_ARGS="" ;;
+  3) SV_LAN=0; BIND_IP=""  ; NET_ARGS=""
+     GSLT="${CS2_GSLT:-${GSLT:-${CS2LM_GSLT:-}}}"
+     if [ -n "$GSLT" ]; then NET_ARGS="+sv_setsteamaccount $GSLT"
+     else echo "[setup] WARN: CS2_NET_MODE=3 无 GSLT，回退档2" >&2; SV_LAN=1; BIND_IP="-ip 0.0.0.0"; fi ;;
+  2|*) SV_LAN=1; BIND_IP="-ip 0.0.0.0"; NET_ARGS=""
+       [ "$NET_MODE" != "2" ] && echo "[setup] WARN: 未知 CS2_NET_MODE='$NET_MODE'，回退档2" >&2 ;;
+esac
 exec ./game/bin/linuxsteamrt64/cs2 \
   -dedicated +map de_dust2 +hostname "SlimTest" \
-  -maxplayers 12 -ip 0.0.0.0 -port 27015 \
+  -maxplayers 12 $BIND_IP -port 27015 \
   -insecure -condebug +game_type 0 +game_mode 0 \
-  +sv_pure 0 +sv_cheats 1 +sv_lan 1 +sv_maxrate 0 \
+  +sv_pure 0 +sv_cheats 1 +sv_lan $SV_LAN $NET_ARGS +sv_maxrate 0 \
   +sv_minrate 100000 +sv_maxupdaterate 128 +sv_maxcmdrate 128 \
   +net_maxroutable 1200
 """
@@ -215,7 +230,34 @@ def _write_windows_scripts():
 rem CS2 Windows 精简服务端 启动脚本 (de_dust2, -insecure)
 rem 网络参数针对 VPN/TUN 链路优化, 避免 NETWORK_DISCONNECT_OVERFLOW
 cd /d "%~dp0"
-game\bin\win64\cs2.exe -dedicated +map de_dust2 +hostname "SlimTest" -maxplayers 12 -ip 0.0.0.0 -port 27015 -insecure -condebug +game_type 0 +game_mode 0 +sv_pure 0 +sv_cheats 1 +sv_lan 1 +sv_maxrate 0 +sv_minrate 100000 +sv_maxupdaterate 128 +sv_maxcmdrate 128 +net_maxroutable 1200
+rem ---------- network mode ----------
+rem CS2_NET_MODE: 1(lan) | 2(lan+bind 0.0.0.0, default) | 3(public, requires GSLT)
+rem  3 = +sv_lan 0 + GSLT(+sv_setsteamaccount); no GSLT -> fall back to 2.
+rem      WARNING: unauth/ToS-risky; binding GSLT publicly may ban that account's GSLT service.
+rem GSLT precedence: CS2_GSLT > GSLT > CS2LM_GSLT
+set "NET_MODE=%CS2_NET_MODE%"
+if not defined NET_MODE set "NET_MODE=2"
+set "SV_LAN=1"
+set "BIND_IP="
+set "NET_ARGS="
+if "%NET_MODE%"=="3" (
+  set "SV_LAN=0"
+  if defined CS2_GSLT set "NET_ARGS=+sv_setsteamaccount %CS2_GSLT%"
+  if not defined NET_ARGS if defined GSLT set "NET_ARGS=+sv_setsteamaccount %GSLT%"
+  if not defined NET_ARGS if defined CS2LM_GSLT set "NET_ARGS=+sv_setsteamaccount %CS2LM_GSLT%"
+  if not defined NET_ARGS (
+    echo [setup] WARN: CS2_NET_MODE=3 no GSLT, fall back to 2
+    set "SV_LAN=1"
+    set "BIND_IP=-ip 0.0.0.0"
+  )
+)
+if "%NET_MODE%"=="2" set "BIND_IP=-ip 0.0.0.0"
+if "%NET_MODE%" neq "1" if "%NET_MODE%" neq "2" if "%NET_MODE%" neq "3" (
+  echo [setup] WARN: unknown CS2_NET_MODE=%NET_MODE%, fall back to 2
+  set "NET_MODE=2"
+  set "BIND_IP=-ip 0.0.0.0"
+)
+game\bin\win64\cs2.exe -dedicated +map de_dust2 +hostname "SlimTest" -maxplayers 12 %BIND_IP% -port 27015 -insecure -condebug +game_type 0 +game_mode 0 +sv_pure 0 +sv_cheats 1 +sv_lan %SV_LAN% %NET_ARGS% +sv_maxrate 0 +sv_minrate 100000 +sv_maxupdaterate 128 +sv_maxcmdrate 128 +net_maxroutable 1200
 """
     readme = """CS2 精简专用服务端 - Windows 版 (de_dust2)
 ===========================================

@@ -3,6 +3,11 @@ rem CS2 Windows slim server launcher (de_dust2, -insecure)
 rem Network params tuned for VPN/TUN links to avoid NETWORK_DISCONNECT_OVERFLOW.
 rem Port precedence: SERVER_PORT (panel env) > CS2_PORT (user) > 27015 default.
 rem
+rem Network mode CS2_NET_MODE: 1(lan) | 2(lan+bind 0.0.0.0, default) | 3(public, requires GSLT)
+rem   GSLT precedence CS2_GSLT > GSLT > CS2LM_GSLT; mode 3 falls back to 2 without GSLT.
+rem   WARNING: this slim build is unauthenticated / may violate ToS; binding a GSLT
+rem   publicly can get that Steam account's GSLT service banned.
+rem
 rem Optional plugin manager web (link-manager feature):
 rem   Enable with CS2LM_WEB=1. Requires cs2lm.bat in this directory.
 rem   - CS2LM_WEB_TOKEN: fixed token (default: random)
@@ -92,12 +97,46 @@ if "%CHOICE%"=="1" (
   )
 )
 
+rem ---------- network mode ----------
+rem CS2_NET_MODE: 1(lan) | 2(lan+bind 0.0.0.0, default) | 3(public, requires GSLT)
+rem  1 = LAN only            +sv_lan 1 (no -ip)
+rem  2 = LAN + bind all NICs  +sv_lan 1 -ip 0.0.0.0 (default, current behavior)
+rem  3 = public              +sv_lan 0 + GSLT (+sv_setsteamaccount)
+rem       WARNING: this slim build is unauthenticated / may violate ToS; binding a
+rem       GSLT publicly can get that Steam account's GSLT service banned.
+rem       Without a GSLT, falls back to mode 2.
+rem GSLT source precedence: CS2_GSLT > GSLT > CS2LM_GSLT
+set "NET_MODE=%CS2_NET_MODE%"
+if not defined NET_MODE set "NET_MODE=2"
+set "SV_LAN=1"
+set "BIND_IP="
+set "NET_ARGS="
+if "%NET_MODE%"=="1" set "BIND_IP="
+if "%NET_MODE%"=="3" (
+  set "SV_LAN=0"
+  set "NET_ARGS="
+  if defined CS2_GSLT set "NET_ARGS=+sv_setsteamaccount %CS2_GSLT%"
+  if not defined NET_ARGS if defined GSLT set "NET_ARGS=+sv_setsteamaccount %GSLT%"
+  if not defined NET_ARGS if defined CS2LM_GSLT set "NET_ARGS=+sv_setsteamaccount %CS2LM_GSLT%"
+  if not defined NET_ARGS (
+    echo [cs2slim] WARN: CS2_NET_MODE=3 but no GSLT (CS2_GSLT/GSLT/CS2LM_GSLT), falling back to mode 2
+    set "SV_LAN=1"
+    set "BIND_IP=-ip 0.0.0.0"
+  )
+)
+if "%NET_MODE%"=="2" set "BIND_IP=-ip 0.0.0.0"
+if "%NET_MODE%" neq "1" if "%NET_MODE%" neq "2" if "%NET_MODE%" neq "3" (
+  echo [cs2slim] WARN: unknown CS2_NET_MODE=%NET_MODE%, falling back to mode 2
+  set "NET_MODE=2"
+  set "BIND_IP=-ip 0.0.0.0"
+)
+
 rem ---------- Start CS2 server ----------
 if "%MENU%"=="1" (
   echo [cs2slim] starting CS2 server, console will show server logs - menu hidden
   echo [cs2slim] to reopen menu, run: start_server.bat menu
 )
-game\bin\win64\cs2.exe -dedicated +map de_dust2 +hostname "SlimTest" -maxplayers 12 -ip 0.0.0.0 -port %PORT% -insecure -condebug +game_type 0 +game_mode 0 +sv_pure 0 +sv_cheats 1 +sv_lan 1 +sv_maxrate 0 +sv_minrate 100000 +sv_maxupdaterate 128 +sv_maxcmdrate 128 +net_maxroutable 1200
+game\bin\win64\cs2.exe -dedicated +map de_dust2 +hostname "SlimTest" -maxplayers 12 %BIND_IP% -port %PORT% -insecure -condebug +game_type 0 +game_mode 0 +sv_pure 0 +sv_cheats 1 +sv_lan %SV_LAN% %NET_ARGS% +sv_maxrate 0 +sv_minrate 100000 +sv_maxupdaterate 128 +sv_maxcmdrate 128 +net_maxroutable 1200
 exit /b %errorlevel%
 
 rem ================= subroutines =================
