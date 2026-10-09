@@ -60,12 +60,21 @@ if "%MENU%"=="1" (
   echo ==================================================
   echo  CS2 slim server - startup options
   echo ==================================================
-  echo  [1] Full start - plugin web + CS2 server
+  if "%CS2LM_WEB%"=="1" (
+    echo  [1] Full start - plugin web + CS2 server
+  ) else (
+    echo  [1] Full start - CS2 server only - web disabled
+  )
   echo  [2] Start plugin manager web only - print token
   echo  [3] Start CS2 server only
   echo  [4] Show current token
   echo  [5] Stop plugin manager web
   echo  [6] Exit
+  if not "%CS2LM_WEB%"=="1" (
+    echo  --------------------------------------------------
+    echo   Hint: to start web together with CS2, set CS2LM_WEB=1
+    echo   - currently disabled
+  )
   echo ==================================================
   choice /c 123456 /t 15 /d 1 /m "Enter a number (default 1): "
   set "CHOICE=!errorlevel!"
@@ -95,6 +104,8 @@ rem choice 1: start web if CS2LM_WEB=1; choice 3: skip web
 if "%CHOICE%"=="1" (
   if "%CS2LM_WEB%"=="1" (
     call :web
+  ) else (
+    echo [cs2slim] Note: CS2LM_WEB=0, plugin web not started. Set CS2LM_WEB=1 to enable it.
   )
 )
 

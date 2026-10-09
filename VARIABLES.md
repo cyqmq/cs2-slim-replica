@@ -98,7 +98,7 @@ start_server.bat
 三个启动脚本（Linux 本地 `start_server.sh` / Linux 面板 `start_panel.sh` / Windows `start_server.bat`）内置**一次性交互菜单**：
 
 - **什么时候显示**：仅在「有交互终端 且 首次启动（不存在 `.cs2slim_menu_seen` 标记）」时显示，或通过 `menu` 参数 / `CS2LM_MENU=1` 强制显示。
-- **菜单选项**：`1` 完整启动 / `2` 只启动 Web / `3` 只启动 CS2 / `4` 查看 token / `5` 停止 Web / `6` 退出。15 秒无输入默认选 `1`。
+- **菜单选项**：`1` 完整启动 / `2` 只启动 Web / `3` 只启动 CS2 / `4` 查看 token / `5` 停止 Web / `6` 退出。15 秒无输入默认选 `1`。其中 `1` 是否启动 Web 取决于 `CS2LM_WEB`（默认 `0` 不启动；菜单会按当前配置动态显示，未启用时会提示把配置区 `CS2LM_WEB` 改为 `1`）。
 - **选择后**：立即 `exec` CS2 前台运行，控制台正常显示服务端日志（菜单**不会**反复出现挡住日志）。
 - **再次打开菜单**：运行 `bash start_server.sh menu`（Windows `start_server.bat menu`）；面板场景可在 `start.sh` 顶部加 `export CS2LM_MENU=1`，或在面板环境变量里配置 `CS2LM_MENU=1`。
 - **跳过菜单**：`bash start_server.sh auto`（Windows `start_server.bat auto`）、`CS2LM_AUTO=1`、或非交互终端（无 TTY）都会直接完整启动，适合面板自动重启。

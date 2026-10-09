@@ -267,16 +267,27 @@ if [ "${CS2LM_MENU:-}" = "0" ]; then MODE=auto; fi
 
 # ---------- 分段式交互菜单（仅首次显示；之后可用 menu / CS2LM_MENU=1 再次打开） ----------
 if [ "$MODE" = "menu" ]; then
+  # 菜单 [1] 描述根据 CS2LM_WEB 动态显示，避免误导用户
+  if [ "${CS2LM_WEB:-0}" = "1" ]; then
+    MENU_FULL_DESC="[1] 完整启动（插件管理 Web + CS2 服务端）"
+  else
+    MENU_FULL_DESC="[1] 完整启动（仅 CS2 服务端；Web 未启用）"
+  fi
   echo ""
   echo "=================================================="
   echo " CS2 精简服务端 - 请选择操作"
   echo "=================================================="
-  echo " [1] 完整启动（插件管理 Web + CS2 服务端）"
+  echo " $MENU_FULL_DESC"
   echo " [2] 只启动插件管理 Web 并显示 token"
   echo " [3] 只启动 CS2 服务端"
   echo " [4] 查看当前 token"
   echo " [5] 停止插件管理 Web"
   echo " [6] 退出"
+  if [ "${CS2LM_WEB:-0}" != "1" ]; then
+    echo "--------------------------------------------------"
+    echo " 提示: 想随 CS2 一起启动 Web？把 start.sh 顶部配置区的"
+    echo "       CS2LM_WEB 默认值改成 1（当前未启用 Web）"
+  fi
   echo "=================================================="
   read -t 15 -p "请输入数字 [默认 1]: " CHOICE || CHOICE="1"
   CHOICE="${CHOICE:-1}"
@@ -307,6 +318,8 @@ if [ "$CHOICE" = "1" ] && [ "${CS2LM_WEB:-0}" = "1" ]; then
   else
     echo "[cs2slim] WARN: 已设置 CS2LM_WEB=1，但未安装 link-manager（缺少 cs2lm），跳过 Web" >&2
   fi
+elif [ "$CHOICE" = "1" ]; then
+  echo "[cs2slim] 提示: CS2LM_WEB=0，插件管理 Web 未启动；如需启用请把 start.sh 配置区 CS2LM_WEB 默认值改为 1（或设置环境变量 CS2LM_WEB=1）。"
 fi
 
 # 菜单模式提示：接下来控制台将切换到 CS2 服务端日志
