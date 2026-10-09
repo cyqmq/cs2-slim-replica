@@ -7,6 +7,7 @@ rem Network mode CS2_NET_MODE: 1(lan) | 2(internet, default) | 3(public, require
 rem   GSLT precedence CS2_GSLT > GSLT > CS2LM_GSLT; mode 3 falls back to 2 without GSLT.
 rem   WARNING: this slim build is unauthenticated / may violate ToS; binding a GSLT
 rem   publicly can get that Steam account's GSLT service banned.
+rem Server password CS2_PASSWORD: default empty = no password; if set adds +sv_password.
 rem
 rem Optional plugin manager web (link-manager feature):
 rem   Enable with CS2LM_WEB=1. Requires cs2lm.bat in this directory.
@@ -135,12 +136,17 @@ if "%NET_MODE%" neq "1" if "%NET_MODE%" neq "2" if "%NET_MODE%" neq "3" (
   set "BIND_IP=-ip 0.0.0.0"
 )
 
+rem ---------- server password ----------
+rem CS2_PASSWORD: server join password, default empty = no password. If set, adds +sv_password.
+set "PASS_ARGS="
+if defined CS2_PASSWORD set "PASS_ARGS=+sv_password "%CS2_PASSWORD%""
+
 rem ---------- Start CS2 server ----------
 if "%MENU%"=="1" (
   echo [cs2slim] starting CS2 server, console will show server logs - menu hidden
   echo [cs2slim] to reopen menu, run: start_server.bat menu
 )
-game\bin\win64\cs2.exe -dedicated +map de_dust2 +hostname "SlimTest" -maxplayers 12 %BIND_IP% -port %PORT% -insecure -condebug +game_type 0 +game_mode 0 +sv_pure 0 +sv_cheats 1 +sv_lan %SV_LAN% %NET_ARGS% +sv_maxrate 0 +sv_minrate 100000 +sv_maxupdaterate 128 +sv_maxcmdrate 128 +net_maxroutable 1200
+game\bin\win64\cs2.exe -dedicated +map de_dust2 +hostname "SlimTest" -maxplayers 12 %BIND_IP% -port %PORT% -insecure -condebug +game_type 0 +game_mode 0 +sv_pure 0 +sv_cheats 1 +sv_lan %SV_LAN% %NET_ARGS% +sv_maxrate 0 +sv_minrate 100000 +sv_maxupdaterate 128 +sv_maxcmdrate 128 +net_maxroutable 1200 %PASS_ARGS%
 exit /b %errorlevel%
 
 rem ================= subroutines =================

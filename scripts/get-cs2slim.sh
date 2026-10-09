@@ -18,6 +18,7 @@
 #                 1=局域网 | 2=互联网/外网直连(默认, +sv_lan 0 -ip 0.0.0.0) | 3=公开(需 GSLT)
 #                 档3 GSLT 来源优先 CS2_GSLT > GSLT > CS2LM_GSLT；无 GSLT 回退档2。
 #                 警告: 本精简服务端非认证/可能违规，公开绑定 GSLT 可能导致该 Steam 账号被 GSLT 服务封禁。
+#   CS2_PASSWORD 服务器进入密码(默认空=无密码)，非空时启动参数追加 +sv_password <密码>。
 #
 # 注意: CS2_DRY_RUN=1 只做预览（生成配置、打印将执行的命令），不会下载/组装，
 #       也不会执行构建。面板模式（CS2_PANEL=1）下 dry-run 仍会生成/预览 $HOME/start.sh。

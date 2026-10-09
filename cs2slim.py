@@ -651,12 +651,20 @@ def cmd_run(args, cfg):
         if net_mode != "2":
             print(f">> WARN: 未知 CS2_NET_MODE='{net_mode}'，回退档2")
         sv_lan, bind_ip, net_args = 0, ["-ip", "0.0.0.0"], []
-    # -ip 插到 -port 前；+sv_lan 插到 +sv_maxrate 前；net_args 追加末尾
+    # ---------- 服务器密码 ----------
+    # CS2_PASSWORD: 服务器进入密码，默认空 = 无密码。非空时追加 +sv_password。
+    password = os.environ.get("CS2_PASSWORD")
+    pass_args = []
+    if password:
+        pass_args = ["+sv_password", password]
+
+    # -ip 插到 -port 前；+sv_lan 插到 +sv_maxrate 前；net_args/pass_args 追加末尾
     if bind_ip:
         pi = params.index("-port")
         params[pi:pi] = bind_ip
     params[params.index("+sv_maxrate") : params.index("+sv_maxrate")] = ["+sv_lan", str(sv_lan)]
     params += net_args
+    params += pass_args
     print(">>", " ".join(params))
     print(f"服务端启动中 (工作目录 {tree})。日志: game/csgo/console.log")
     if platform == "win64":

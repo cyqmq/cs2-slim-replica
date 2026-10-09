@@ -31,6 +31,7 @@
 #   CS2_NET_MODE  网络模式：1=局域网(仅 LAN) | 2=互联网/外网直连(默认) | 3=公开(需 GSLT)
 #                 GSLT 来源优先 CS2_GSLT > GSLT > CS2LM_GSLT；档3无 GSLT 时回退档2。
 #                 警告: 本精简服务端非认证/可能违规，公开绑定 GSLT 可能导致该 Steam 账号被 GSLT 服务封禁。
+#   CS2_PASSWORD 服务器进入密码（默认空=无密码），非空时追加 +sv_password。
 
 SLIM_DIR="${CS2_SLIM_DIR:-$HOME/cs2-slim-build/slim}"
 CS2_BIN="$SLIM_DIR/game/bin/linuxsteamrt64/cs2"
@@ -273,11 +274,20 @@ case "$NET_MODE" in
          echo "[cs2slim] WARN: 未知 CS2_NET_MODE='$NET_MODE'，回退档2" >&2 ;;
 esac
 
-# ---------- 6. 启动服务端 ----------
+# ---------- 6. 服务器密码 ----------
+# CS2_PASSWORD: 服务器进入密码，默认空 = 无密码。非空时追加 +sv_password。
+PASSWORD="${CS2_PASSWORD:-}"
+PASS_ARGS=()
+if [ -n "$PASSWORD" ]; then
+  PASS_ARGS=(+sv_password "$PASSWORD")
+fi
+
+# ---------- 7. 启动服务端 ----------
 exec ./game/bin/linuxsteamrt64/cs2 \
   -dedicated +map de_dust2 +hostname "SlimTest" \
   -maxplayers 12 $BIND_IP -port "$PORT" \
   -insecure -condebug +game_type 0 +game_mode 0 \
   +sv_pure 0 +sv_cheats 1 \
   +sv_lan $SV_LAN $NET_ARGS +sv_maxrate 0 +sv_minrate 100000 \
-  +sv_maxupdaterate 128 +sv_maxcmdrate 128 +net_maxroutable 1200
+  +sv_maxupdaterate 128 +sv_maxcmdrate 128 +net_maxroutable 1200 \
+  ${PASS_ARGS[@]+"${PASS_ARGS[@]}"}

@@ -151,13 +151,20 @@ case "$NET_MODE" in
   2|*) SV_LAN=0; BIND_IP="-ip 0.0.0.0"; NET_ARGS=""
        [ "$NET_MODE" != "2" ] && echo "[setup] WARN: 未知 CS2_NET_MODE='$NET_MODE'，回退档2" >&2 ;;
 esac
+# ---------- 服务器密码 ----------
+# CS2_PASSWORD: 服务器进入密码，默认空 = 无密码。非空时追加 +sv_password。
+PASSWORD="${CS2_PASSWORD:-}"
+PASS_ARGS=()
+if [ -n "$PASSWORD" ]; then
+  PASS_ARGS=(+sv_password "$PASSWORD")
+fi
 exec ./game/bin/linuxsteamrt64/cs2 \
   -dedicated +map de_dust2 +hostname "SlimTest" \
   -maxplayers 12 $BIND_IP -port 27015 \
   -insecure -condebug +game_type 0 +game_mode 0 \
   +sv_pure 0 +sv_cheats 1 +sv_lan $SV_LAN $NET_ARGS +sv_maxrate 0 \
   +sv_minrate 100000 +sv_maxupdaterate 128 +sv_maxcmdrate 128 \
-  +net_maxroutable 1200
+  +net_maxroutable 1200 ${PASS_ARGS[@]+"${PASS_ARGS[@]}"}
 """
     readme = """CS2 精简专用服务端 - Linux 版 (de_dust2)
 =========================================
@@ -263,7 +270,11 @@ if "%NET_MODE%" neq "1" if "%NET_MODE%" neq "2" if "%NET_MODE%" neq "3" (
   set "SV_LAN=0"
   set "BIND_IP=-ip 0.0.0.0"
 )
-game\bin\win64\cs2.exe -dedicated +map de_dust2 +hostname "SlimTest" -maxplayers 12 %BIND_IP% -port 27015 -insecure -condebug +game_type 0 +game_mode 0 +sv_pure 0 +sv_cheats 1 +sv_lan %SV_LAN% %NET_ARGS% +sv_maxrate 0 +sv_minrate 100000 +sv_maxupdaterate 128 +sv_maxcmdrate 128 +net_maxroutable 1200
+rem ---------- server password ----------
+rem CS2_PASSWORD: default empty = no password; if set adds +sv_password.
+set "PASS_ARGS="
+if defined CS2_PASSWORD set "PASS_ARGS=+sv_password "%CS2_PASSWORD%""
+game\bin\win64\cs2.exe -dedicated +map de_dust2 +hostname "SlimTest" -maxplayers 12 %BIND_IP% -port 27015 -insecure -condebug +game_type 0 +game_mode 0 +sv_pure 0 +sv_cheats 1 +sv_lan %SV_LAN% %NET_ARGS% +sv_maxrate 0 +sv_minrate 100000 +sv_maxupdaterate 128 +sv_maxcmdrate 128 +net_maxroutable 1200 %PASS_ARGS%
 """
     readme = """CS2 精简专用服务端 - Windows 版 (de_dust2)
 ===========================================

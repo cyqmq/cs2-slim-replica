@@ -114,6 +114,32 @@ start_server.bat
 
 ---
 
+## 三·六、网络模式与服务器密码变量（运行）
+
+| 变量 | 默认值 | 说明 |
+|---|---|---|
+| `CS2_NET_MODE` | `2` | 服务端网络模式：`1`=局域网（`+sv_lan 1`）、`2`=互联网/外网直连（`+sv_lan 0 -ip 0.0.0.0`，默认，不进公网列表）、`3`=公开（`+sv_lan 0` + GSLT，进 Steam 公网列表） |
+| `CS2_GSLT` / `GSLT` / `CS2LM_GSLT` | 空 | 档3 公开所需的 GSLT token。优先级 `CS2_GSLT` > `GSLT` > `CS2LM_GSLT`；档3 无 GSLT 时自动回退档2 |
+| `CS2_PASSWORD` | 空 | 服务器进入密码。默认空 = 无密码；非空时启动参数追加 `+sv_password <密码>` |
+
+**警告**：本精简服务端为非认证/可能涉及违规场景。档3 公开绑定 GSLT 可能导致该 Steam 账号的 GSLT 服务被封禁，请自行评估风险。
+
+**示例**：
+
+```bash
+# Linux：档2（默认，外网可直连）+ 设置服务器进入密码
+CS2_PASSWORD=abc123 bash start_server.sh
+
+# Linux：档3 公开（需 GSLT）+ 密码
+CS2_GSLT=TOKEN CS2_PASSWORD=abc123 CS2_NET_MODE=3 bash start_server.sh
+
+# Windows
+set CS2_PASSWORD=abc123
+start_server.bat
+```
+
+---
+
 ## 四、面板启动脚本变量（`start_panel.sh` 额外支持）
 
 | 变量 | 默认值 | 说明 |
@@ -138,6 +164,9 @@ start_server.bat
 | `CS2_PANEL` | `0` | 面板模式 | 安装 |
 | `SERVER_PORT` | 未设置 | 面板端口（最高优先） | 运行 |
 | `CS2_PORT` | `27015` | 用户指定端口 | 运行 |
+| `CS2_NET_MODE` | `2` | 网络模式：1=局域网 / 2=互联网直连 / 3=公开(需GSLT) | 运行 |
+| `CS2_GSLT` | 空 | 档3 公开所需 GSLT（`CS2_GSLT`>`GSLT`>`CS2LM_GSLT`） | 运行 |
+| `CS2_PASSWORD` | 空 | 服务器进入密码（默认无密码） | 运行 |
 | `CS2LM_WEB` | `0` | 启用插件管理 Web | 运行 |
 | `CS2LM_WEB_TOKEN` | 空（随机） | Web token（固定值，仍会写入 `web_token.txt`） | 运行 |
 | `CS2LM_MENU` | 未设置 | `1` = 强制显示启动菜单 | 运行 |
