@@ -587,6 +587,8 @@ curl -fsSL https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts
 - 若已存在 → 覆盖为最新模板
 - 自动清理 BOM / CRLF，并补上 `cs2` 二进制执行权限
 
+**运行 / 启动配置区**：`start.sh` 顶部内嵌了「★ 运行 / 启动配置」，端口、网络模式（`CS2_NET_MODE`）、服务器密码（`CS2_PASSWORD`）、插件管理 Web（`CS2LM_WEB`）、GSLT 等全部可以直接编辑 `start.sh` 修改（环境变量仍优先）。简幻欢启动命令固定为 `bash start.sh`、面板里无法配环境变量时，直接改 `start.sh` 即可。
+
 然后在面板里把启动命令设为：
 
 ```bash
@@ -781,6 +783,7 @@ cd <服务器根目录>          # 含 game/ 的目录
 - 运行中的 CS2 控制台可手动 `exec cs2slim_token.cfg` 查看 token（启动时已生成在 `game/csgo/cfg/cs2slim_token.cfg`，不自动加入启动参数）。
 - PID 存 `web.pid`（重启自动清理旧进程），日志在 `web.log`（Windows 另存 `web.err.log`），启动失败会在控制台警告。
 - Linux：面板 `CS2LM_WEB=1 bash start_panel.sh`；本地 `CS2LM_WEB=1 bash start_server.sh`。
+- **简幻欢面板无法配置环境变量时**：直接编辑 `$HOME/start.sh` 顶部配置区，把 `export CS2LM_WEB="${CS2LM_WEB:-0}"` 中的 `0` 改成 `1` 即可。
 - Windows：在面板环境变量中配置 `CS2LM_WEB=1`，`start_server.bat` 即自动启用（需 `cs2lm.bat` 位于服务器根目录）。
 
 **一次性启动菜单**（三个启动脚本均内置）：首次交互启动时弹出菜单（`1` 完整启动 / `2` 只启动 Web / `3` 只启动 CS2 / `4` 查看 token / `5` 停止 Web / `6` 退出，15 秒无输入默认选 `1`），选择后 CS2 前台运行、日志正常显示。菜单只显示一次（`.cs2slim_menu_seen` 标记抑制后续显示）；想再次打开用 `bash start_server.sh menu`（面板场景可在 `start.sh` 顶部加 `export CS2LM_MENU=1` 或面板环境变量设 `CS2LM_MENU=1`）；面板自动重启建议设 `CS2LM_AUTO=1` 或启动命令加 `auto` 跳过菜单。

@@ -33,6 +33,37 @@
 #                 警告: 本精简服务端非认证/可能违规，公开绑定 GSLT 可能导致该 Steam 账号被 GSLT 服务封禁。
 #   CS2_PASSWORD 服务器进入密码（默认空=无密码），非空时追加 +sv_password。
 
+# ============================================================
+# ★ 运行 / 启动配置（简幻欢等面板启动命令固定为 bash start.sh，
+#   无法在面板设置环境变量时，直接修改下面的默认值即可生效；
+#   若面板环境变量已设置同名变量，则以环境变量为准。
+#   注意：重新运行一键脚本会覆盖本文件，修改前请先备份）
+# ============================================================
+
+# 服务端端口（默认 27015；简幻欢面板注入的 SERVER_PORT 优先级更高）
+export CS2_PORT="${CS2_PORT:-27015}"
+
+# 网络模式：1=局域网 | 2=互联网/外网直连(默认, +sv_lan 0 -ip 0.0.0.0) | 3=公开(需 GSLT)
+export CS2_NET_MODE="${CS2_NET_MODE:-2}"
+
+# 服务器进入密码（默认空=无密码），例如设为: abc123
+export CS2_PASSWORD="${CS2_PASSWORD:-}"
+
+# 插件管理 Web：1=完整启动时同时启动（需已安装 link-manager 功能包）
+export CS2LM_WEB="${CS2LM_WEB:-0}"
+
+# 插件管理 Web 固定 token（默认空=随机生成，并写入 slim/web_token.txt）
+export CS2LM_WEB_TOKEN="${CS2LM_WEB_TOKEN:-}"
+
+# 档3 公开模式的 GSLT（来源优先 CS2_GSLT > GSLT > CS2LM_GSLT；无 GSLT 自动回退档2）
+export CS2_GSLT="${CS2_GSLT:-}"
+# export GSLT=""
+# export CS2LM_GSLT=""
+
+# 可选：强制显示/跳过菜单（默认自动）
+# export CS2LM_MENU=""
+# export CS2LM_AUTO=""
+
 SLIM_DIR="${CS2_SLIM_DIR:-$HOME/cs2-slim-build/slim}"
 CS2_BIN="$SLIM_DIR/game/bin/linuxsteamrt64/cs2"
 
