@@ -178,6 +178,9 @@ setup.sh 会:
     ]:
         with open(path, "w", encoding="utf-8", newline="\n") as f:
             f.write(content)
+        # 生成的 shell 脚本需可执行（否则部署端 sudo ./setup.sh 会 Permission denied）
+        if path.endswith(".sh"):
+            os.chmod(path, 0o755)
         print(f"  wrote: {os.path.relpath(path, BASE)}")
 
 

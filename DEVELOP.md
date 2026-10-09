@@ -95,7 +95,7 @@ python cs2slim.py download --platform linux --maps de_dust2,de_mirage --features
 1. 用 `core/filelists/filelist_2347770.txt` + 平台对应二进制清单跑 DepotDownloader 下载 depot。
 2. `python scripts/extract_vpk.py` 提取 loose files（详见指南第六节）。
 3. 按指南第七节组装精简树（移走 `pak01_*.vpk`，保留 `de_dust2.vpk` + prefabs）。
-4. Linux：上传到 Linux，运行 `core/deploy/linux/setup.sh`，再 `core/deploy/linux/start_server.sh`。
+4. Linux：上传到 Linux，运行 `sudo ./core/deploy/linux/setup.sh`（脚本已带可执行权限；也可用 `bash core/deploy/linux/setup.sh`），再 `./core/deploy/linux/start_server.sh`。
 5. Windows：见指南第十三节，双击 `core/deploy/windows/start_server.bat` 启动。
 
 ## 选配组件用法

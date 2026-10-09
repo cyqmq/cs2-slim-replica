@@ -480,7 +480,15 @@ def cmd_package(args, cfg):
     if fmt == "zip":
         cmd = ["tar", "-a", "-c", "-f", out, "-C", tree, "."]
     else:
-        cmd = ["tar", "-a", "-c", "-f", out, "-C", tree, "."]
+        # Linux tar.gz 需保留 shell 脚本可执行位。
+        # Windows 自带 bsdtar 会把 .sh 记成 666（丢失执行位），部署后 ./setup.sh 会 Permission denied；
+        # 因此优先用 Git Bash GNU tar（记录 MSYS chmod 的 755），Linux 上直接使用系统 GNU tar。
+        git_bash = r"C:\Program Files\Git\bin\bash.exe"
+        if os.path.exists(git_bash):
+            # Git Bash 的 tar 会把 `C:/...` 当作远程主机，必须用相对路径（subprocess 已设 cwd=workdir）
+            cmd = [git_bash, "-c", f"tar -czf '{os.path.basename(out)}' -C '{os.path.basename(tree)}' ."]
+        else:
+            cmd = ["tar", "-czf", out, "-C", tree, "."]
     print(">>", " ".join(cmd))
     r = subprocess.run(cmd, cwd=workdir)
     if r.returncode != 0:
