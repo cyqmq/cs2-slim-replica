@@ -67,11 +67,19 @@ command -v curl  >/dev/null 2>&1 || { echo "错误: 需要 curl"; exit 1; }
 # --- 面板部署函数（完整执行与 dry-run 预览共用） ---
 deploy_panel_script() {
   local template="$REPO_DIR/core/deploy/linux/start_panel.sh"
-  if [ ! -f "$template" ]; then
-    echo "  本地仓库缺少 start_panel.sh，从 GitHub 获取 ..."
-    curl -fL --retry 3 -o "$WORKDIR/start_panel.sh" \
-      "https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/core/deploy/linux/start_panel.sh"
+  # 优先从 GitHub 拉取最新模板，避免本地 repo 过时（用户重跑一键脚本时 repo 可能不是最新版）
+  local panel_url="https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/core/deploy/linux/start_panel.sh"
+  [ -n "${CS2_GH_PROXY:-}" ] && panel_url="${CS2_GH_PROXY%/}/$panel_url"
+  if curl -fsSL --retry 3 -m 30 -o "$WORKDIR/start_panel.sh" "$panel_url" 2>/dev/null \
+     && [ -s "$WORKDIR/start_panel.sh" ] \
+     && grep -q '#!/bin/bash' "$WORKDIR/start_panel.sh"; then
     template="$WORKDIR/start_panel.sh"
+    echo "  已获取最新 start_panel.sh 模板（GitHub）"
+  elif [ ! -f "$template" ]; then
+    echo "  错误: 无法获取 start_panel.sh 模板（GitHub 下载失败且本地无模板）" >&2
+    return 1
+  else
+    echo "  GitHub 模板获取失败，回退本地 repo 模板"
   fi
   if [ -f "$HOME/start.sh" ]; then
     echo "  检测到已有 $HOME/start.sh，覆盖为最新模板"
@@ -93,6 +101,12 @@ PY
   # 面板默认只给 start.sh 执行权限，这里顺便补上 cs2 二进制的执行权限
   chmod +x "$WORKDIR/slim/game/bin/linuxsteamrt64/cs2" 2>/dev/null || true
   chmod +x "$WORKDIR/slim/start_server.sh" 2>/dev/null || true
+  # 语法校验，确保生成的 start.sh 可用
+  if ! bash -n "$HOME/start.sh" 2>"$WORKDIR/start-sh-check.log"; then
+    echo "  错误: 生成的 $HOME/start.sh 语法校验失败，请检查模板来源" >&2
+    cat "$WORKDIR/start-sh-check.log" >&2
+    return 1
+  fi
   echo "  已生成 $HOME/start.sh（含自动安装+启动逻辑）"
   echo "  请把面板启动命令设为:  bash start.sh"
 }
