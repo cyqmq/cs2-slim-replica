@@ -208,7 +208,13 @@ else
 fi
 
 case "$CHOICE" in
-  2) start_web; exit $? ;;
+  2) if start_web; then
+       WEB_PID="$(cat "$SLIM_DIR/web.pid" 2>/dev/null || echo '?')"
+       echo "[setup] 插件管理 Web 已在后台运行 (pid $WEB_PID)，端口 TCP $PORT"
+       echo "[setup] 面板场景请选择 [1] 完整启动（CS2 前台运行，Web 后台共存）；"
+       echo "[setup] 当前脚本将退出，面板可能显示'服务器已停止'并清理后台进程。"
+     fi
+     exit $? ;;
   4) show_token; exit $? ;;
   5) stop_web; exit $? ;;
   6) echo "[setup] 已退出"; exit 0 ;;
