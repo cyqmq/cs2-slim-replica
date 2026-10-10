@@ -20,8 +20,10 @@
 #                 警告: 本精简服务端非认证/可能违规，公开绑定 GSLT 可能导致该 Steam 账号被 GSLT 服务封禁。
 #   CS2_PASSWORD 服务器进入密码(默认空=无密码)，非空时启动参数追加 +sv_password <密码>。
 #
-# 注意: CS2_DRY_RUN=1 只做预览（生成配置、打印将执行的命令），不会下载/组装，
-#       也不会执行构建。面板模式（CS2_PANEL=1）下 dry-run 仍会生成/预览 $HOME/start.sh。
+# 注意: CS2_DRY_RUN=1 只做预览（生成配置、打印将执行的命令），不会下载 depot/核心包/地图/功能包，
+#       也不会执行构建。但第 3 步「获取主仓库」仍会执行（git clone/源码包）——这是有意的：
+#       面板模式 dry-run 生成 $HOME/start.sh 预览时需要本地仓库的启动模板作回退。
+#       面板模式（CS2_PANEL=1）下 dry-run 仍会生成/预览 $HOME/start.sh。
 #
 # 重要: 使用 curl | bash 时，请先用 export 设置变量！
 #   错误: CS2_MODE=prebuilt ... curl ... | bash   (变量只传给 curl，bash 收不到)

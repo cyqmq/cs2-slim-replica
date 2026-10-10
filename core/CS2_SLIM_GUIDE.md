@@ -568,7 +568,7 @@ python cs2slim.py prebuilt --config slim.yaml --dry-run  # 只预览要下载的
 ```
 
 一键脚本支持环境变量：CS2_MODE / CS2_MAPS / CS2_FEATURES / CS2_WORKDIR / CS2_PACKAGE / CS2_DRY_RUN / CS2_GH_PROXY / CS2_PANEL。
-CS2_DRY_RUN=1 时只生成配置并打印将执行的命令，不实际下载（可用于预览）。
+CS2_DRY_RUN=1 时只生成配置并打印将执行的命令，不下载 depot/核心包/功能包，也不执行构建（可用于预览）。注意：仍会获取主仓库脚本（供面板 dry-run 的 `start.sh` 模板回退）。
 
 ### 15.7 面板用户（简幻欢 / Pterodactyl 等）
 

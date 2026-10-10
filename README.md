@@ -49,7 +49,7 @@ irm https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs
 | `CS2_FEATURES` | 逗号分隔功能（如 `bots`） | (空) |
 | `CS2_WORKDIR` | 工作目录 | `~/cs2-slim-build` |
 | `CS2_PACKAGE` | 1=完成后打包（仅 source 模式） | 0 |
-| `CS2_DRY_RUN` | 1=只生成配置不下载（预览；`CS2_PANEL=1` 时会生成 `start.sh` 预览） | 0 |
+| `CS2_DRY_RUN` | 1=只生成配置/预览下载计划，不下载内容包（仍会获取主仓库脚本供面板模板回退；`CS2_PANEL=1` 时会生成 `start.sh` 预览） | 0 |
 | `CS2_GH_PROXY` | GitHub 加速代理前缀（如 `https://ghproxy.com`） | (空) |
 | `CS2_PANEL` | 1=面板模式：生成/覆盖 `$HOME/start.sh`（dry-run 也生成预览） | 0 |
 

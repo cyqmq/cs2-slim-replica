@@ -167,7 +167,8 @@ def resolve_maps(cfg):
 # ---------------------------------------------------------------------------
 def build_combined_filelist(core_filelist, cfg, registry_base=None):
     """核心 filelist + 地图组件片段 + 功能组件片段 => 合并行列表。"""
-    with open(core_filelist, encoding="utf-8") as f:
+    # utf-8-sig：去除核心 filelist 可能带有的 UTF-8 BOM，避免组合文件首行出现 \ufeff
+    with open(core_filelist, encoding="utf-8-sig") as f:
         lines = [ln.rstrip("\n") for ln in f]
 
     # 核心行也纳入去重集合，避免地图/功能片段重复追加核心已含文件（如 de_dust2.vpk）
@@ -503,7 +504,7 @@ def cmd_download(args, cfg):
         f.write("\n".join(combined) + "\n")
     print(f"组合 filelist: {combined_path} ({len(combined)} 行)")
 
-    depot_tool = cfg.get("depot_tool") or args.depot_tool
+    depot_tool = args.depot_tool or cfg.get("depot_tool")
     if depot_tool and not os.path.exists(depot_tool):
         sys.exit(f"depot_tool 不存在: {depot_tool}")
     jobs = [
@@ -565,7 +566,13 @@ def cmd_build(args, cfg):
         )
 
     print(f"组装平台 {platform}，地图: {maps}，额外: {extra or '无'}")
-    r = subprocess.run([sys.executable, os.path.join(SCRIPTS_DIR, "rebuild_slim.py"),
+    rebuild_script = os.path.join(SCRIPTS_DIR, "rebuild_slim.py")
+    if not os.path.exists(rebuild_script):
+        sys.exit(
+            f"缺少组装脚本: {rebuild_script}\n"
+            "请确认 scripts/ 目录完整（主仓库可能被裁剪或损坏）。"
+        )
+    r = subprocess.run([sys.executable, rebuild_script,
                      "--base-dir", workdir,
                      "--maps", ",".join(extra),
                      "--platforms", platform])
@@ -689,7 +696,7 @@ def cmd_run(args, cfg):
 # 一键全流程: download + extract + build (+package)
 # ---------------------------------------------------------------------------
 def cmd_all(args, cfg):
-    if not (cfg.get("depot_tool") or args.depot_tool):
+    if not (args.depot_tool or cfg.get("depot_tool")):
         sys.exit("一键模式需要 depot_tool（slim.yaml 设置 或 --depot-tool 指定）")
     print("=" * 60)
     print(">>> [1/4] 下载 depot（按配置组合 filelist）")
@@ -760,6 +767,7 @@ def cmd_prebuilt(args, cfg):
 
     # 2. 解压核心包
     if os.path.exists(tree):
+        print(f"WARN: 已有精简树 {tree}，将被覆盖。若你修改过其中的文件，请先备份（即将删除）。")
         shutil.rmtree(tree)
     os.makedirs(tree, exist_ok=True)
     print(f"解压核心包到 {tree} ...")
@@ -910,6 +918,9 @@ def main():
         cfg["maps"] = args.maps
     if getattr(args, "features", None):
         cfg["features"] = args.features
+    # --depot-tool 命令行优先，覆盖配置文件值（与其他选项行为一致）
+    if getattr(args, "depot_tool", None):
+        cfg["depot_tool"] = args.depot_tool
 
     args.func(args, cfg)
 

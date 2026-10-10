@@ -42,7 +42,7 @@ import argparse
 import os
 import struct
 import sys
-from collections import Counter
+from collections import Counter, OrderedDict
 
 VPK_MAGIC = 0x55AA1234
 TERMINATOR = 0xFFFF
@@ -189,11 +189,13 @@ def should_exclude(full_path):
     return False
 
 
-archive_handles = {}
+# LRU 句柄缓存：限制同时打开的编号包句柄数，避免大量 VPK 包时触及 ulimit -n
+archive_handles = OrderedDict()
+_ARCHIVE_HANDLE_MAX = 32
 
 
 def read_archive_data(archive_index, entry_offset, entry_length, archives_dir):
-    """随机访问读取编号包指定范围数据。句柄缓存避免重复打开文件。"""
+    """随机访问读取编号包指定范围数据。LRU 句柄缓存避免重复打开文件，同时限制句柄数。"""
     if archive_index == EMBEDDED:
         return None  # 数据在 dir.vpk 内联区，由调用方处理
     if archive_index not in archive_handles:
@@ -202,6 +204,16 @@ def read_archive_data(archive_index, entry_offset, entry_length, archives_dir):
             archive_handles[archive_index] = None
         else:
             archive_handles[archive_index] = open(archive_path, "rb")
+            # 超过上限：关闭并移除最久未使用的已打开句柄
+            if len(archive_handles) > _ARCHIVE_HANDLE_MAX:
+                for idx in list(archive_handles.keys()):
+                    h = archive_handles[idx]
+                    if h is not None:
+                        h.close()
+                        del archive_handles[idx]
+                        break
+    else:
+        archive_handles.move_to_end(archive_index)
     h = archive_handles[archive_index]
     if h is None:
         return None
