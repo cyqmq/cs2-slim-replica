@@ -152,12 +152,16 @@ rem CS2_PASSWORD: server join password, default empty = no password. If set, add
 set "PASS_ARGS="
 if defined CS2_PASSWORD set "PASS_ARGS=+sv_password "%CS2_PASSWORD%""
 
+rem ---------- sv_cheats ----------
+rem CS2_SV_CHEATS: default 0 (safe). Set to 1 to enable cheat commands.
+if not defined CS2_SV_CHEATS set "CS2_SV_CHEATS=0"
+
 rem ---------- Start CS2 server ----------
 if "%MENU%"=="1" (
   echo [cs2slim] starting CS2 server, console will show server logs - menu hidden
   echo [cs2slim] to reopen menu, run: start_server.bat menu
 )
-game\bin\win64\cs2.exe -dedicated +map de_dust2 +hostname "SlimTest" -maxplayers 12 %BIND_IP% -port %PORT% -insecure -condebug +game_type 0 +game_mode 0 +sv_pure 0 +sv_cheats 1 +sv_lan %SV_LAN% %NET_ARGS% +sv_maxrate 0 +sv_minrate 100000 +sv_maxupdaterate 128 +sv_maxcmdrate 128 +net_maxroutable 1200 %PASS_ARGS%
+game\bin\win64\cs2.exe -dedicated +map de_dust2 +hostname "SlimTest" -maxplayers 12 %BIND_IP% -port %PORT% -insecure -condebug +game_type 0 +game_mode 0 +sv_pure 0 +sv_cheats %CS2_SV_CHEATS% +sv_lan %SV_LAN% %NET_ARGS% +sv_maxrate 0 +sv_minrate 100000 +sv_maxupdaterate 128 +sv_maxcmdrate 128 +net_maxroutable 1200 %PASS_ARGS%
 exit /b %errorlevel%
 
 rem ================= subroutines =================

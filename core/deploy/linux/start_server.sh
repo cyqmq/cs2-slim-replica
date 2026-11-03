@@ -313,11 +313,15 @@ if [ -n "$PASSWORD" ]; then
   PASS_ARGS=(+sv_password "$PASSWORD")
 fi
 
+# ---------- sv_cheats ----------
+# CS2_SV_CHEATS: 默认 0（安全）；设为 1 才启用作弊指令。
+SV_CHEATS="${CS2_SV_CHEATS:-0}"
+
 exec ./game/bin/linuxsteamrt64/cs2 \
   -dedicated +map "$CS2_MAP" +hostname "$CS2_HOSTNAME" \
   -maxplayers "$CS2_MAXPLAYERS" $BIND_IP -port "$PORT" \
   -insecure -condebug +game_type 0 +game_mode 0 \
-  +sv_pure 0 +sv_cheats 1 \
+  +sv_pure 0 +sv_cheats "$SV_CHEATS" \
   +sv_lan $SV_LAN $NET_ARGS +sv_maxrate 0 +sv_minrate 100000 \
   +sv_maxupdaterate 128 +sv_maxcmdrate 128 +net_maxroutable 1200 \
   ${PASS_ARGS[@]+"${PASS_ARGS[@]}"}

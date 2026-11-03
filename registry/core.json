@@ -10,5 +10,13 @@
       "name": "cs2-slim-win.zip",
       "url": "https://github.com/cyqmq/cs2-slim-replica/releases/latest/download/cs2-slim-win.zip"
     }
+  },
+  "start_scripts": {
+    "linux": {
+      "sha256": "f1988595929f26a784b2fbd18d9937b90b99d11c2184b430ed625e7d81d26ad2"
+    },
+    "win64": {
+      "sha256": "cea181d0cfc073e192d1678d9300004a8931944d48d7b81d85b2be20e6330925"
+    }
   }
 }

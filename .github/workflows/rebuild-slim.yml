@@ -117,8 +117,9 @@ jobs:
           TAG: ${{ needs.create-release.outputs.tag }}
         run: |
           cp cs2-build/cs2-slim-linux.tar.gz cs2-build/cs2-slim.tar.gz
-          gh release upload "$TAG" cs2-build/cs2-slim.tar.gz --repo "$GITHUB_REPOSITORY" --clobber
-          echo "已上传 cs2-slim.tar.gz 到 $TAG"
+          ( cd cs2-build && sha256sum cs2-slim.tar.gz > cs2-slim.tar.gz.sha256 )
+          gh release upload "$TAG" cs2-build/cs2-slim.tar.gz cs2-build/cs2-slim.tar.gz.sha256 --repo "$GITHUB_REPOSITORY" --clobber
+          echo "已上传 cs2-slim.tar.gz (+.sha256) 到 $TAG"
 
       - name: Show final disk
         run: df -h / || true
@@ -173,8 +174,9 @@ jobs:
           TAG: ${{ needs.create-release.outputs.tag }}
         run: |
           cp cs2-build/cs2-slim-win64.zip cs2-build/cs2-slim-win.zip
-          gh release upload "$TAG" cs2-build/cs2-slim-win.zip --repo "$GITHUB_REPOSITORY" --clobber
-          echo "已上传 cs2-slim-win.zip 到 $TAG"
+          ( cd cs2-build && sha256sum cs2-slim-win.zip > cs2-slim-win.zip.sha256 )
+          gh release upload "$TAG" cs2-build/cs2-slim-win.zip cs2-build/cs2-slim-win.zip.sha256 --repo "$GITHUB_REPOSITORY" --clobber
+          echo "已上传 cs2-slim-win.zip (+.sha256) 到 $TAG"
 
       - name: Show final disk
         run: df -h / || true
