@@ -26,11 +26,11 @@
 ```bash
 # source 模式（支持任意地图）：de_dust2 + de_mirage + 功能
 export CS2_MODE=source CS2_MAPS=de_dust2,de_mirage CS2_FEATURES=metamod,css,link-manager
-curl -fsSL https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs2slim.sh | bash
+curl -fsSL https://raw.githubusercontent.com/cyqmq/cs2slim-cli/main/scripts/get-cs2slim.sh | bash
 
 # prebuilt 模式（支持所有竞技地图预构建包）：de_dust2 + de_mirage + 功能
 export CS2_MODE=prebuilt CS2_MAPS=de_dust2,de_mirage CS2_FEATURES=metamod,css,link-manager
-curl -fsSL https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs2slim.sh | bash
+curl -fsSL https://raw.githubusercontent.com/cyqmq/cs2slim-cli/main/scripts/get-cs2slim.sh | bash
 ```
 
 > ⚠️ **prebuilt 模式地图支持**：核心包内置 `de_dust2`（默认），另外 8 张竞技地图（`de_mirage / de_inferno / de_ancient / de_anubis / de_cache / de_nuke / de_overpass / de_train / de_vertigo`）**均有预构建包**，prebuilt 模式可全部选择下载。若地图在 `registry/maps.json` 中不存在或暂无预构建包，prebuilt 模式会**明确报错退出**（不再静默跳过）。

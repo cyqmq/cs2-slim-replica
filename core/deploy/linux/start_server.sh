@@ -27,6 +27,11 @@ cd "$(dirname "$0")"
 # 服务端端口（默认 27015；面板注入的 SERVER_PORT 优先级更高）
 export CS2_PORT="${CS2_PORT:-27015}"
 
+# 启动地图 / 主机名 / 最大玩家数（可由 CLI run 通过环境变量覆盖）
+export CS2_MAP="${CS2_MAP:-de_dust2}"
+export CS2_HOSTNAME="${CS2_HOSTNAME:-SlimTest}"
+export CS2_MAXPLAYERS="${CS2_MAXPLAYERS:-12}"
+
 # 网络模式：1=局域网 | 2=互联网/外网直连(默认, +sv_lan 0 -ip 0.0.0.0) | 3=公开(需 GSLT)
 export CS2_NET_MODE="${CS2_NET_MODE:-2}"
 
@@ -309,8 +314,8 @@ if [ -n "$PASSWORD" ]; then
 fi
 
 exec ./game/bin/linuxsteamrt64/cs2 \
-  -dedicated +map de_dust2 +hostname "SlimTest" \
-  -maxplayers 12 $BIND_IP -port "$PORT" \
+  -dedicated +map "$CS2_MAP" +hostname "$CS2_HOSTNAME" \
+  -maxplayers "$CS2_MAXPLAYERS" $BIND_IP -port "$PORT" \
   -insecure -condebug +game_type 0 +game_mode 0 \
   +sv_pure 0 +sv_cheats 1 \
   +sv_lan $SV_LAN $NET_ARGS +sv_maxrate 0 +sv_minrate 100000 \

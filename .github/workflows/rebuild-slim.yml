@@ -73,6 +73,11 @@ jobs:
     timeout-minutes: 360
     steps:
       - uses: actions/checkout@v4
+      - name: Checkout cs2slim-cli
+        uses: actions/checkout@v4
+        with:
+          repository: cyqmq/cs2slim-cli
+          path: cs2slim-cli
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -93,19 +98,19 @@ jobs:
           EOF
 
       - name: Download depots
-        run: python cs2slim.py download --config slim-linux.yaml --depot-tool "$PWD/cs2-build/tools/DepotDownloader"
+        run: python cs2slim-cli/cs2slim.py --registry-base https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/registry download --config slim-linux.yaml --depot-tool "$PWD/cs2-build/tools/DepotDownloader"
 
       - name: Extract loose files
-        run: python cs2slim.py extract --config slim-linux.yaml
+        run: python cs2slim-cli/cs2slim.py --registry-base https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/registry extract --config slim-linux.yaml
 
       - name: Clean up numbered packs
         run: python scripts/updater/cleanup_depot.py --workdir ./cs2-build
 
       - name: Build slim tree
-        run: python cs2slim.py build --config slim-linux.yaml
+        run: python cs2slim-cli/cs2slim.py --registry-base https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/registry build --config slim-linux.yaml
 
       - name: Package
-        run: python cs2slim.py package --config slim-linux.yaml --format tar.gz
+        run: python cs2slim-cli/cs2slim.py --registry-base https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/registry package --config slim-linux.yaml --format tar.gz
 
       - name: Upload release asset
         env:
@@ -124,6 +129,11 @@ jobs:
     timeout-minutes: 360
     steps:
       - uses: actions/checkout@v4
+      - name: Checkout cs2slim-cli
+        uses: actions/checkout@v4
+        with:
+          repository: cyqmq/cs2slim-cli
+          path: cs2slim-cli
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -144,19 +154,19 @@ jobs:
           EOF
 
       - name: Download depots
-        run: python cs2slim.py download --config slim-win.yaml --depot-tool "$PWD/cs2-build/tools/DepotDownloader"
+        run: python cs2slim-cli/cs2slim.py --registry-base https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/registry download --config slim-win.yaml --depot-tool "$PWD/cs2-build/tools/DepotDownloader"
 
       - name: Extract loose files
-        run: python cs2slim.py extract --config slim-win.yaml
+        run: python cs2slim-cli/cs2slim.py --registry-base https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/registry extract --config slim-win.yaml
 
       - name: Clean up numbered packs
         run: python scripts/updater/cleanup_depot.py --workdir ./cs2-build
 
       - name: Build slim tree
-        run: python cs2slim.py build --config slim-win.yaml
+        run: python cs2slim-cli/cs2slim.py --registry-base https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/registry build --config slim-win.yaml
 
       - name: Package
-        run: python cs2slim.py package --config slim-win.yaml --format zip
+        run: python cs2slim-cli/cs2slim.py --registry-base https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/registry package --config slim-win.yaml --format zip
 
       - name: Upload release asset
         env:

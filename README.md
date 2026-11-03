@@ -2,7 +2,7 @@
 
 将原版约 **72.3GB** 的 CS2 专用服务器精简到 **~1.7GB（Linux）/ ~1.9GB（Windows）**（解压后，单地图 de_dust2 实测可用；体积随 CS2 更新略有浮动，最新实测见 `DEVELOP.md`）。
 
-本仓库提供**零依赖一键安装**：自动下载工具、获取配方、下载 depot（或拉取预构建包）并拼装成可直接启动的精简服务端。无需手动安装 SteamCMD / DepotDownloader。
+本仓库是**纯自动构建仓库**（CS2 精简服务端构建管线）：配方（`core/filelists`）、组件目录（`registry/`，含预构建版本）、启动脚本（`core/deploy`）、GitHub Actions（检测 CS2 更新 + 重建 + 发布 Release）。**CLI 与一键安装脚本已迁移到 [cs2slim-cli](https://github.com/cyqmq/cs2slim-cli)**，本仓库不再包含 `cs2slim.py` / `get-cs2slim.sh`。
 
 ## 一键安装
 
@@ -14,30 +14,30 @@
 
 ```bash
 # 默认: de_dust2 精简服务端（source 模式，首次约 1.5GB 下载）
-curl -fsSL https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs2slim.sh | bash
+curl -fsSL https://raw.githubusercontent.com/cyqmq/cs2slim-cli/main/scripts/get-cs2slim.sh | bash
 
 # 更快: 预构建模式（直接拉 Release 包拼装，核心包约 1.1GB）
 export CS2_MODE=prebuilt CS2_MAPS=de_dust2,de_mirage CS2_FEATURES=bots
-curl -fsSL https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs2slim.sh | bash
+curl -fsSL https://raw.githubusercontent.com/cyqmq/cs2slim-cli/main/scripts/get-cs2slim.sh | bash
 
 # 国内网络受限: 加 GitHub 加速代理
 export CS2_GH_PROXY=https://ghproxy.com CS2_MODE=prebuilt
-curl -fsSL https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs2slim.sh | bash
+curl -fsSL https://raw.githubusercontent.com/cyqmq/cs2slim-cli/main/scripts/get-cs2slim.sh | bash
 
 # 面板模式（简幻欢 / Pterodactyl）: 自动生成 $HOME/start.sh（首次启动会自动安装）
 export CS2_MODE=prebuilt CS2_PANEL=1
-curl -fsSL https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs2slim.sh | bash
+curl -fsSL https://raw.githubusercontent.com/cyqmq/cs2slim-cli/main/scripts/get-cs2slim.sh | bash
 ```
 
 ### Windows (irm | iex)
 
 ```powershell
 # 默认: de_dust2 精简服务端（source 模式）
-irm https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs2slim.ps1 | iex
+irm https://raw.githubusercontent.com/cyqmq/cs2slim-cli/main/scripts/get-cs2slim.ps1 | iex
 
 # 更快: 预构建模式（选配地图 + 人机）
 $env:CS2_MODE='prebuilt'; $env:CS2_MAPS='de_dust2,de_mirage'; $env:CS2_FEATURES='bots'
-irm https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs2slim.ps1 | iex
+irm https://raw.githubusercontent.com/cyqmq/cs2slim-cli/main/scripts/get-cs2slim.ps1 | iex
 ```
 
 ### 环境变量
@@ -91,7 +91,8 @@ bash ~/start.sh
 
 | 仓库 | 角色 |
 |------|------|
-| [cs2-slim-replica](https://github.com/cyqmq/cs2-slim-replica)（本仓库） | 主仓库：配方 + 一键脚本 + CLI |
+| [cs2-slim-replica](https://github.com/cyqmq/cs2-slim-replica)（本仓库） | 构建仓库：配方 + 组件目录 + 自动构建管线（发布精简包） |
+| [cs2slim-cli](https://github.com/cyqmq/cs2slim-cli) | 用户侧工具：CLI + 一键安装脚本（含版本自检 / upgrade） |
 | [cs2-slim-maps](https://github.com/cyqmq/cs2-slim-maps) | 选配地图（de_mirage / de_inferno / …） |
 | [cs2-slim-features](https://github.com/cyqmq/cs2-slim-features) | 选配功能（bots 人机 / Metamod / CounterStrikeSharp / Swiftly / Plugify / ModSharp 等） |
 

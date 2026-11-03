@@ -79,7 +79,7 @@ if [ ! -x "$CS2_BIN" ]; then
   # 使安装产物直接落在自定义 CS2_SLIM_DIR（若自定义目录名不是 slim，安装后移动到目标位置）
   export CS2_WORKDIR="$(dirname "$SLIM_DIR")"
   curl -fsSL --retry 3 \
-    https://raw.githubusercontent.com/cyqmq/cs2-slim-replica/main/scripts/get-cs2slim.sh | bash
+    https://raw.githubusercontent.com/cyqmq/cs2slim-cli/main/scripts/get-cs2slim.sh | bash
   # 若一键脚本输出路径（$CS2_WORKDIR/slim）与期望的 CS2_SLIM_DIR 不一致，移动到位
   if [ -d "$CS2_WORKDIR/slim" ] && [ "$CS2_WORKDIR/slim" != "$SLIM_DIR" ]; then
     echo "[cs2slim] 移动精简树 $CS2_WORKDIR/slim -> $SLIM_DIR"

@@ -1,0 +1,14 @@
+{
+  "version": "v1.6.0",
+  "release_url": "https://github.com/cyqmq/cs2-slim-replica/releases/latest",
+  "assets": {
+    "linux": {
+      "name": "cs2-slim.tar.gz",
+      "url": "https://github.com/cyqmq/cs2-slim-replica/releases/latest/download/cs2-slim.tar.gz"
+    },
+    "win64": {
+      "name": "cs2-slim-win.zip",
+      "url": "https://github.com/cyqmq/cs2-slim-replica/releases/latest/download/cs2-slim-win.zip"
+    }
+  }
+}
