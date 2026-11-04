@@ -94,7 +94,7 @@ bash ~/start.sh
 | [cs2-slim-replica](https://github.com/cyqmq/cs2-slim-replica)（本仓库） | 构建仓库：配方 + 组件目录 + 自动构建管线（发布精简包） |
 | [cs2slim-cli](https://github.com/cyqmq/cs2slim-cli) | 用户侧工具：CLI + 一键安装脚本（含版本自检 / upgrade） |
 | [cs2-slim-maps](https://github.com/cyqmq/cs2-slim-maps) | 选配地图（de_mirage / de_inferno / …） |
-| [cs2-slim-features](https://github.com/cyqmq/cs2-slim-features) | 选配功能（bots 人机 / Metamod / CounterStrikeSharp / Swiftly / Plugify / ModSharp 等） |
+| [cs2-slim-features](https://github.com/cyqmq/cs2-slim-features) | 选配功能（仅维护 bots / link-manager；Metamod / CounterStrikeSharp / Swiftly / Plugify / ModSharp 框架由 cs2slim-cli 从官方上游直装） |
 
 ## 更多文档
 
