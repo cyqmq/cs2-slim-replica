@@ -20,7 +20,18 @@
       "filelist": [],
       "config_url": "https://raw.githubusercontent.com/cyqmq/cs2-slim-features/main/metamod/",
       "prebuilt_url": "https://github.com/cyqmq/cs2-slim-features/releases/latest/download/metamod-pack.zip",
-      "platform": "linux"
+      "platform": "linux",
+      "source": "upstream",
+      "upstream": {
+        "repo": "alliedmodders/metamod-source",
+        "variant": "linux",
+        "asset_pattern": "mmsource-{version}-{variant}.tar.gz",
+        "extract_dir": "game/csgo",
+        "asset_name": "mmsource-2.0.0-git1483-linux.tar.gz",
+        "prerelease": true
+      },
+      "version": "2.0.0.1483",
+      "sha256": "0fdcccaa369937ed7f521c78462314b5266f39c1d65a84e4c2d3847324cd7776"
     },
     "metamod-win": {
       "required": false,
@@ -29,7 +40,18 @@
       "filelist": [],
       "config_url": "https://raw.githubusercontent.com/cyqmq/cs2-slim-features/main/metamod-win/",
       "prebuilt_url": "https://github.com/cyqmq/cs2-slim-features/releases/latest/download/metamod-pack-win.zip",
-      "platform": "windows"
+      "platform": "windows",
+      "source": "upstream",
+      "upstream": {
+        "repo": "alliedmodders/metamod-source",
+        "variant": "windows",
+        "asset_pattern": "mmsource-{version}-{variant}.zip",
+        "extract_dir": "game/csgo",
+        "asset_name": "mmsource-2.0.0-git1483-windows.zip",
+        "prerelease": true
+      },
+      "version": "2.0.0.1483",
+      "sha256": "5a5b61413eeb4c204050d7cca83d28c5c707d9edd5e74d4fc9f96cde147c5341"
     },
     "css": {
       "required": false,
@@ -89,7 +111,17 @@
       "filelist": [],
       "config_url": "https://raw.githubusercontent.com/cyqmq/cs2-slim-features/main/swiftly/",
       "prebuilt_url": "https://github.com/cyqmq/cs2-slim-features/releases/latest/download/swiftly-pack.zip",
-      "platform": "linux"
+      "platform": "linux",
+      "source": "upstream",
+      "upstream": {
+        "repo": "swiftly-solution/swiftlys2",
+        "variant": "linux",
+        "asset_pattern": "swiftlys2-{variant}-v{version}-with-runtimes.zip",
+        "extract_dir": "game/csgo",
+        "asset_name": "swiftlys2-linux-v1.5.0-with-runtimes.zip"
+      },
+      "version": "1.5.0",
+      "sha256": "6d8fef0cceedf64d86c9c2ffb25d76908162eb1a3c135b4ef65660fda96b31c1"
     },
     "swiftly-win": {
       "required": false,
@@ -98,7 +130,17 @@
       "filelist": [],
       "config_url": "https://raw.githubusercontent.com/cyqmq/cs2-slim-features/main/swiftly-win/",
       "prebuilt_url": "https://github.com/cyqmq/cs2-slim-features/releases/latest/download/swiftly-pack-win.zip",
-      "platform": "windows"
+      "platform": "windows",
+      "source": "upstream",
+      "upstream": {
+        "repo": "swiftly-solution/swiftlys2",
+        "variant": "windows",
+        "asset_pattern": "swiftlys2-{variant}-v{version}-with-runtimes.zip",
+        "extract_dir": "game/csgo",
+        "asset_name": "swiftlys2-windows-v1.5.0-with-runtimes.zip"
+      },
+      "version": "1.5.0",
+      "sha256": "e95cd4d7e10f5c1c3871493b9960eced200e8af8053bfa42893d4f437d6e62c1"
     },
     "plugify": {
       "required": false,
@@ -110,7 +152,17 @@
         "metamod"
       ],
       "prebuilt_url": "https://github.com/cyqmq/cs2-slim-features/releases/latest/download/plugify-pack.zip",
-      "platform": "linux"
+      "platform": "linux",
+      "source": "upstream",
+      "upstream": {
+        "repo": "untrustedmodders/plugify-metamod-loader",
+        "variant": "linuxsteamrt64",
+        "asset_pattern": "plugify-metamod-loader-build-{variant}-{version}.tar.bz2",
+        "extract_dir": "game",
+        "asset_name": "plugify-metamod-loader-build-linuxsteamrt64-2d1e135.tar.bz2"
+      },
+      "version": "2.1.4",
+      "sha256": "c9d55dd46604a2c76aae871b0f29d8adf595f345a0828e813b552bf31efe3591"
     },
     "plugify-win": {
       "required": false,
@@ -122,7 +174,17 @@
         "metamod-win"
       ],
       "prebuilt_url": "https://github.com/cyqmq/cs2-slim-features/releases/latest/download/plugify-pack-win.zip",
-      "platform": "windows"
+      "platform": "windows",
+      "source": "upstream",
+      "upstream": {
+        "repo": "untrustedmodders/plugify-metamod-loader",
+        "variant": "win64",
+        "asset_pattern": "plugify-metamod-loader-build-{variant}-{version}.tar.bz2",
+        "extract_dir": "game",
+        "asset_name": "plugify-metamod-loader-build-win64-2d1e135.tar.bz2"
+      },
+      "version": "2.1.4",
+      "sha256": "f6e7dc1f1533b18c0f56581f1d616320605f52da54cc009011230d0da17a5d90"
     },
     "modsharp": {
       "required": false,
@@ -131,7 +193,17 @@
       "filelist": [],
       "config_url": "https://raw.githubusercontent.com/cyqmq/cs2-slim-features/main/modsharp/",
       "prebuilt_url": "https://github.com/cyqmq/cs2-slim-features/releases/latest/download/modsharp-pack.zip",
-      "platform": "linux"
+      "platform": "linux",
+      "source": "upstream",
+      "upstream": {
+        "repo": "Kxnrl/modsharp-public",
+        "variant": "linux",
+        "asset_pattern": "ModSharp-{version}-{variant}.zip",
+        "extract_dir": "game",
+        "asset_name": "ModSharp-git197-linux.zip"
+      },
+      "version": "git-197",
+      "sha256": "1e4b0b11660c75dad1ec9f200905504649018ea1fbe19462f773b5d63b62f869"
     },
     "modsharp-win": {
       "required": false,
@@ -140,7 +212,17 @@
       "filelist": [],
       "config_url": "https://raw.githubusercontent.com/cyqmq/cs2-slim-features/main/modsharp-win/",
       "prebuilt_url": "https://github.com/cyqmq/cs2-slim-features/releases/latest/download/modsharp-pack-win.zip",
-      "platform": "windows"
+      "platform": "windows",
+      "source": "upstream",
+      "upstream": {
+        "repo": "Kxnrl/modsharp-public",
+        "variant": "windows",
+        "asset_pattern": "ModSharp-{version}-{variant}.zip",
+        "extract_dir": "game",
+        "asset_name": "ModSharp-git197-windows.zip"
+      },
+      "version": "git-197",
+      "sha256": "6723106d777eb93490722322ba9f3a5c1b54a9d6311ed7de80cb755caff070f5"
     }
   }
 }
