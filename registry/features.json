@@ -41,7 +41,16 @@
         "metamod"
       ],
       "prebuilt_url": "https://github.com/cyqmq/cs2-slim-features/releases/latest/download/css-pack.zip",
-      "platform": "linux"
+      "platform": "linux",
+      "source": "upstream",
+      "upstream": {
+        "repo": "roflmuffin/CounterStrikeSharp",
+        "variant": "linux",
+        "asset_pattern": "counterstrikesharp-with-runtime-{variant}-{version}.zip",
+        "extract_dir": "game/csgo"
+      },
+      "version": "1.0.379",
+      "sha256": "bd7e52265346a66a3106934c1f1085b642ec5560b7f070a9b10be510341d583a"
     },
     "css-win": {
       "required": false,
@@ -53,7 +62,16 @@
         "metamod-win"
       ],
       "prebuilt_url": "https://github.com/cyqmq/cs2-slim-features/releases/latest/download/css-pack-win.zip",
-      "platform": "windows"
+      "platform": "windows",
+      "source": "upstream",
+      "upstream": {
+        "repo": "roflmuffin/CounterStrikeSharp",
+        "variant": "windows",
+        "asset_pattern": "counterstrikesharp-with-runtime-{variant}-{version}.zip",
+        "extract_dir": "game/csgo"
+      },
+      "version": "1.0.379",
+      "sha256": "82860eb4d54e06383839245b160b6edf7fbaec1a33131119dbc266c615f625cf"
     },
     "link-manager": {
       "required": false,
