@@ -18,7 +18,6 @@
       "name": "Metamod:Source 插件框架（Linux）",
       "description": "CS2 基础插件加载框架（linuxsteamrt64）。安装后控制台可用 meta 命令，并可加载 CounterStrikeSharp 等插件。自动补 gameinfo.gi。",
       "filelist": [],
-      "config_url": "https://raw.githubusercontent.com/cyqmq/cs2-slim-features/main/metamod/",
       "prebuilt_url": "https://github.com/cyqmq/cs2-slim-features/releases/latest/download/metamod-pack.zip",
       "platform": "linux",
       "source": "upstream",
@@ -39,7 +38,6 @@
       "name": "Metamod:Source 插件框架（Windows）",
       "description": "CS2 基础插件加载框架 Windows 版（win64）。安装后控制台可用 meta 命令，并可加载 CounterStrikeSharp 等插件。自动补 gameinfo.gi。",
       "filelist": [],
-      "config_url": "https://raw.githubusercontent.com/cyqmq/cs2-slim-features/main/metamod-win/",
       "prebuilt_url": "https://github.com/cyqmq/cs2-slim-features/releases/latest/download/metamod-pack-win.zip",
       "platform": "windows",
       "source": "upstream",
@@ -60,7 +58,6 @@
       "name": "CounterStrikeSharp 插件框架（Linux）",
       "description": "CS2 C# 插件框架 Linux 版（linuxsteamrt64，带 .NET 运行时）。依赖 metamod，安装后把插件 dll 放入 addons/counterstrikesharp/plugins/ 即可。",
       "filelist": [],
-      "config_url": "https://raw.githubusercontent.com/cyqmq/cs2-slim-features/main/css/",
       "requires": [
         "metamod"
       ],
@@ -82,7 +79,6 @@
       "name": "CounterStrikeSharp 插件框架（Windows）",
       "description": "CS2 C# 插件框架 Windows 版（win64，带 .NET 运行时）。依赖 metamod-win，安装后把插件 dll 放入 addons/counterstrikesharp/plugins/ 即可。",
       "filelist": [],
-      "config_url": "https://raw.githubusercontent.com/cyqmq/cs2-slim-features/main/css-win/",
       "requires": [
         "metamod-win"
       ],
@@ -113,7 +109,6 @@
       "name": "SwiftlyS2 插件框架（Linux）",
       "description": "CS2 C++/C# 插件框架 Linux 版（linuxsteamrt64，带 .NET 运行时）。独立框架，不依赖 Metamod，拼装时自动补 gameinfo.gi（Game csgo/addons/swiftlys2）。插件放入 addons/swiftlys2/plugins/。",
       "filelist": [],
-      "config_url": "https://raw.githubusercontent.com/cyqmq/cs2-slim-features/main/swiftly/",
       "prebuilt_url": "https://github.com/cyqmq/cs2-slim-features/releases/latest/download/swiftly-pack.zip",
       "platform": "linux",
       "source": "upstream",
@@ -134,7 +129,6 @@
       "name": "SwiftlyS2 插件框架（Windows）",
       "description": "CS2 C++/C# 插件框架 Windows 版（win64，带 .NET 运行时）。独立框架，不依赖 Metamod，拼装时自动补 gameinfo.gi（Game csgo/addons/swiftlys2）。插件放入 addons/swiftlys2/plugins/。",
       "filelist": [],
-      "config_url": "https://raw.githubusercontent.com/cyqmq/cs2-slim-features/main/swiftly-win/",
       "prebuilt_url": "https://github.com/cyqmq/cs2-slim-features/releases/latest/download/swiftly-pack-win.zip",
       "platform": "windows",
       "source": "upstream",
@@ -155,7 +149,6 @@
       "name": "Plugify 插件框架（Linux）",
       "description": "多语言插件系统 Linux 版（linuxsteamrt64，Metamod 加载器）。依赖 metamod，安装后通过 plugify 包管理器安装语言模块与插件。",
       "filelist": [],
-      "config_url": "https://raw.githubusercontent.com/cyqmq/cs2-slim-features/main/plugify/",
       "requires": [
         "metamod"
       ],
@@ -178,7 +171,6 @@
       "name": "Plugify 插件框架（Windows）",
       "description": "多语言插件系统 Windows 版（win64，Metamod 加载器）。依赖 metamod-win，安装后通过 plugify 包管理器安装语言模块与插件。",
       "filelist": [],
-      "config_url": "https://raw.githubusercontent.com/cyqmq/cs2-slim-features/main/plugify-win/",
       "requires": [
         "metamod-win"
       ],
@@ -201,7 +193,6 @@
       "name": "ModSharp C# 插件框架（Linux）",
       "description": "CS2 C# 插件框架 Linux 版（game/sharp 结构，需服务端预装 .NET 10）。独立框架，不依赖 Metamod，拼装时自动补 gameinfo.gi（Game sharp）。",
       "filelist": [],
-      "config_url": "https://raw.githubusercontent.com/cyqmq/cs2-slim-features/main/modsharp/",
       "prebuilt_url": "https://github.com/cyqmq/cs2-slim-features/releases/latest/download/modsharp-pack.zip",
       "platform": "linux",
       "source": "upstream",
@@ -221,7 +212,6 @@
       "name": "ModSharp C# 插件框架（Windows）",
       "description": "CS2 C# 插件框架 Windows 版（game/sharp 结构，需服务端预装 .NET 10 与 VC++ 运行库）。独立框架，不依赖 Metamod，拼装时自动补 gameinfo.gi（Game sharp）。",
       "filelist": [],
-      "config_url": "https://raw.githubusercontent.com/cyqmq/cs2-slim-features/main/modsharp-win/",
       "prebuilt_url": "https://github.com/cyqmq/cs2-slim-features/releases/latest/download/modsharp-pack-win.zip",
       "platform": "windows",
       "source": "upstream",
