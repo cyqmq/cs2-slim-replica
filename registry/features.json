@@ -1,6 +1,6 @@
 {
   "version": "2026-10-09",
-  "release_version": "v1.6.0",
+  "release_version": "v1.6.1",
   "release_url": "https://github.com/cyqmq/cs2-slim-features/releases/latest",
   "note": "功能组件。通常不需要额外 depot 文件（bots 是引擎内置 + 配置脚本）；css 依赖 metamod，css-win 依赖 metamod-win，plugify 依赖 metamod，plugify-win 依赖 metamod-win（requires 字段），拼装时会自动先装依赖。swiftly/modsharp 为独立框架，拼装时自动补 gameinfo.gi；modsharp 需服务端预装 .NET 10。link-manager 是跨平台管理工具（需宿主机 Python 3.11+），不安装框架本身。",
   "features": {
